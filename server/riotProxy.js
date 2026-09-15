@@ -10,13 +10,13 @@ function send(res, status, data, retryAfter) {
   res.end(JSON.stringify(data));
 }
 
-export function createRiotProxy({ apiKey, fetchImpl = fetch, timeoutMs = 12000, corsOrigins } = {}) {
+export function createRiotProxy({ apiKey, fetchImpl = fetch, timeoutMs = 12000, corsOrigins, originAllowed } = {}) {
   let blockedUntil = 0;
   return async function riotProxy(req, res, next = () => send(res, 404, { error: 'NOT_FOUND' })) {
     if (!req.url?.startsWith('/api/')) return next();
     const origin = req.headers.origin;
     if (corsOrigins) {
-      if (origin && !corsOrigins.has(origin)) return send(res, 403, { error: 'ORIGIN_DENIED' });
+      if (origin && !(originAllowed ? originAllowed(origin) : corsOrigins.has(origin))) return send(res, 403, { error: 'ORIGIN_DENIED' });
       if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Vary', 'Origin');
       if (req.method === 'OPTIONS') return res.writeHead(204, { 'Access-Control-Allow-Methods': 'GET, OPTIONS' }).end();
