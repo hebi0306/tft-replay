@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRiotProxy } from '../server/riotProxy.js';
+import { createRiotProxy } from './riotProxy.js';
 const root = dirname(fileURLToPath(import.meta.url));
 if (existsSync(resolve(root, '.env'))) process.loadEnvFile(resolve(root, '.env'));
 const origins = new Set((process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',').map(value => value.trim()).filter(Boolean));

@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { createRiotProxy } from '../server/riotProxy.js';
-import { indexStaticData, resolveStatic } from '../src/services/tftStaticData.js';
-import { mapRiotMatchToMatchCard, lastRoundLabel } from '../src/data/riotMatchMapper.js';
-import { getMockReplay, getDemoRecords } from '../src/data/mockReplay.js';
-import { errorMessage } from '../src/services/riotApi.js';
+import { createRiotProxy } from '../backend/riotProxy.js';
+import { indexStaticData, resolveStatic } from '../frontend/src/services/tftStaticData.js';
+import { mapRiotMatchToMatchCard, lastRoundLabel } from '../frontend/src/data/riotMatchMapper.js';
+import { getMockReplay, getDemoRecords } from '../frontend/src/data/mockReplay.js';
+import { errorMessage } from '../frontend/src/services/riotApi.js';
 
 // Synthetic API contract fixture, not a real Riot match.
 const participant = {
@@ -43,6 +43,25 @@ test('Riot adapter maps the selected PUUID, preserves zeros and never invents po
   assert.equal(record.replay.rounds.length, 25);
   assert.notEqual(record.replay.rounds.at(-1).level, match.level);
   assert.equal(getDemoRecords().length, 5);
+});
+test('demo match cards use Set 18 champion art while keeping match data mock', () => {
+  const catalog = { champion: {
+    'maps/shipping/map22/sets/tftset17/shop/ashe': { name: 'Ashe', image: 'old-set.png' },
+    'maps/shipping/map22/sets/tftset18/shop/ashe': { name: 'Ashe', image: 'set-18.png' },
+    'maps/shipping/map22/sets/tftset18/shop/karma': { name: 'Karma', image: 'karma-set-18.png' },
+  } };
+  const record = getDemoRecords(catalog)[0];
+  assert.equal(record.match.source, 'mock');
+  assert.equal(record.replay.source, 'mock');
+  assert.equal(record.match.finalComposition[0].name, 'Ashe');
+  assert.equal(record.match.finalComposition[0].image, 'set-18.png');
+  assert.equal(record.replay.rounds.at(-1).board[0].image, 'set-18.png');
+  assert.equal(record.replay.rounds[0].board[0].image, 'set-18.png');
+  assert.equal(record.replay.rounds[0].bench[0].name, 'Karma');
+  assert.equal(record.replay.rounds[0].bench[0].image, 'karma-set-18.png');
+  assert.equal(getMockReplay().rounds[0].board[0].image, undefined);
+  assert.equal(record.match.placement, 1);
+  assert.equal(record.match.duration, '34:21');
 });
 test('missing values, unknown static IDs and invalid star tiers stay unknown', () => {
   const match = mapRiotMatchToMatchCard({ info: { participants: [{ puuid: 'p', units: [{ tier: 99, items: [111] }] }] } }, 'p', {});

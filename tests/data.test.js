@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getMatch, getMatches } from '../src/data/matchRepository.js';
+import { getMatch, getMatches } from '../frontend/src/data/matchRepository.js';
 test('all demo recordings have valid, evolving snapshots and consistent final results', () => {
   const matches = getMatches();
   assert.equal(matches.length, 5);

@@ -1,7 +1,21 @@
 import { resolveStatic } from '../services/tftStaticData.js';
+import { translate } from '../i18n/translations.js';
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
 export const formatDuration = seconds => number(seconds) === null || seconds < 0 ? '—' : `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
-export const lastRoundLabel = match => match.finalStage ? `Stage ${match.finalStage}` : match.lastRound != null ? `Round ${match.lastRound}` : 'Round unavailable';
+export const lastRoundLabel = (match, language = 'en') => match.finalStage ? `${translate(language, 'stage')} ${match.finalStage}` : match.lastRound != null ? `${translate(language, 'round')} ${match.lastRound}` : translate(language, 'roundUnavailable');
+export function matchDate(match, language = 'en') {
+  if (match.source === 'riot') return Number.isFinite(match.timestamp)
+    ? new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(match.timestamp))
+    : translate(language, 'dateUnavailable');
+  if (language === 'ko') {
+    const parts = match.date?.match(/^(\w{3}) (\d{1,2}), (\d{4}) · (\d{2}:\d{2})$/);
+    if (parts) {
+      const month = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ').indexOf(parts[1]) + 1;
+      if (month) return `${parts[3]}. ${month}. ${Number(parts[2])}. · ${parts[4]}`;
+    }
+  }
+  return match.date;
+}
 export function mapRiotParticipantToFinalComposition(participant, catalog) {
   return (Array.isArray(participant?.units) ? participant.units : []).map((unit, index) => ({
     ...resolveStatic(catalog, 'champion', unit.character_id),
@@ -30,11 +44,13 @@ export function mapRiotMatchToMatchCard(raw, puuid, catalog) {
     goldLeft: number(participant.gold_left), totalDamage: number(participant.total_damage_to_players),
     playerFinishSeconds: number(participant.time_eliminated), duration: formatDuration(info.game_length),
     gameLengthSeconds: number(info.game_length), date, timestamp, timestampLabel: number(info.gameCreation) !== null ? 'Game creation' : 'Riot match timestamp',
+    timestampLabelKey: number(info.gameCreation) !== null ? 'gameCreation' : 'riotMatchTimestamp',
     gameDatetime: number(info.game_datetime), gameVersion: info.game_version || null,
     queueId: number(info.queue_id) ?? number(info.queueId), mode: info.tft_game_type || 'TFT',
     finalStage: null, finalComposition, traits,
     theme: traits.filter(trait => trait.active && trait.resolved).slice(0, 2).map(trait => trait.name).join(' · ') || 'Final composition',
     staticVersion: catalog?.version || null,
     staticWarning: [catalog?.warning, unresolved ? '일부 정적 이름/이미지를 찾지 못했습니다. 알 수 없는 항목의 식별자는 내부 데이터에 보존됩니다.' : null].filter(Boolean).join(' '),
+    staticWarningCodes: [catalog?.warningCode, unresolved ? 'staticUnresolved' : null].filter(Boolean),
   };
 }

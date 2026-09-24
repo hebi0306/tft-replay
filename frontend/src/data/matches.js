@@ -1,6 +1,6 @@
 import { adaptGepRecording } from '../services/gepAdapter.js';
 // Fictional full-state capture payloads; not the official Overwolf event schema.
-const champions = ['Renekton', 'Ashe', 'Jax', 'Volibear', 'Aurora', 'Ornn', 'Braum', 'Karma', 'Anivia', 'Yasuo', 'Ahri', 'Shen'];
+const champions = ['Ashe', 'Ornn', 'Ahri', 'Gnar', 'Morgana', 'Kennen', 'Rakan', 'Ivern', 'Zyra', 'Karma', 'Shen', 'Sejuani'];
 const equipment = ['Giant Slayer', 'Guinsoo’s Rageblade', 'Warmog’s Armor'];
 export const placementLabel = n => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
 export const roundLabel = round => `${round.stage}-${round.round}`;

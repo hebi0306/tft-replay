@@ -5,15 +5,14 @@
   "author": "TFT Replay",
   "private": true,
   "type": "module",
-  "main": "electron/main.cjs",
+  "main": "desktop/electron/main.cjs",
   "scripts": {
     "dev": "npm run build && ow-electron .",
-    "build": "vite build --configLoader runner",
-    "preview": "vite preview --host 127.0.0.1 --configLoader runner",
+    "build": "vite build --config frontend/vite.config.js --configLoader runner",
+    "preview": "vite preview --config frontend/vite.config.js --host 127.0.0.1 --configLoader runner",
     "start": "npm run build && ow-electron .",
     "package": "npm run build && ow-electron-builder --publish=never",
     "build:ow-electron": "npm run package",
-    "web": "node server/index.js",
     "backend": "node backend/index.js",
     "test": "node --test tests/*.test.js"
   },
@@ -26,7 +25,7 @@
     "react-router-dom": "^7.6.0"
   },
   "overwolf": { "packages": ["gep"] },
-  "build": { "asar": true, "productName": "TFT Replay", "directories": { "output": "release" }, "files": ["dist/**/*", "server/**/*", "electron/**/*", "assets/**/*", "package.json"], "overwolf": { "requireSigning": false, "disableAdOptimization": true }, "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "assets/icon.ico", "artifactName": "${productName}-Setup-${version}.${ext}" }, "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true } },
+  "build": { "asar": true, "productName": "TFT Replay", "directories": { "output": "release" }, "files": ["dist/**/*", "desktop/**/*", "frontend/assets/**/*", "package.json"], "overwolf": { "requireSigning": false, "disableAdOptimization": true }, "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "frontend/assets/icon.ico", "artifactName": "${productName}-Setup-${version}.${ext}" }, "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true } },
   "devDependencies": {
     "@overwolf/ow-electron": "^42.7.1",
     "@overwolf/ow-electron-builder": "^26.9.3",

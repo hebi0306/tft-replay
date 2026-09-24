@@ -52,8 +52,8 @@ npm run package
 ## 데스크톱 구조
 
 ```text
-OW-Electron main process (electron/main.cjs)
-  → loopback-only local server (server/appServer.js)
+OW-Electron main process (desktop/electron/main.cjs)
+  → loopback-only local server (desktop/appServer.js)
   → React/Vite renderer (dist/)
   → Riot API
 ```
@@ -62,7 +62,7 @@ OW-Electron main process (electron/main.cjs)
 
 `package.json`의 `overwolf.packages: ["gep"]`는 미래 GEP 사용 준비만 합니다. 이 프로토타입은 GEP 호출·구독을 하지 않으며, 현재 Mock GEP → Adapter → Replay UI 흐름을 그대로 유지합니다.
 
-앱 아이콘은 `assets/icon.ico`의 임시 TFT Replay 아이콘입니다. 디자인이 확정되면 같은 경로의 `.ico` 파일만 교체하면 됩니다.
+앱 아이콘은 `frontend/assets/icon.ico`의 임시 TFT Replay 아이콘입니다. 디자인이 확정되면 같은 경로의 `.ico` 파일만 교체하면 됩니다.
 
 ## 화면과 사용 흐름
 
@@ -75,20 +75,11 @@ OW-Electron main process (electron/main.cjs)
 
 ## 주요 파일
 
-- `src/App.jsx`: 공통 레이아웃 및 React Router 경로.
-- `src/pages/`: HomePage, MatchDetailPage, ReplayPage.
-- `src/components/Board.jsx`: Board, BoardUnit, Bench.
-- `src/components/MatchCard.jsx`: 경기 카드.
-- `src/components/ReplayPanels.jsx`: PlayerStatus, RoundList, ReplayTimeline, ChangesPanel, TraitList.
-- `src/data/matches.js`: 기존 5개 mock 경기를 보존하며, 좌표 기반 `mockGepData`를 생성하고 어댑터를 거쳐 공통 Replay rounds를 만듭니다.
-- `src/data/mockReplay.js`: 독립된 mock Replay 및 데모 경기 조회. 실제 Riot 최종 결과에서 Replay를 합성하지 않습니다.
-- `src/services/gepAdapter.js`: 전체 상태 캡처 입력 → UI Snapshot 변환·검증.
-- `src/utils/replayDiff.js`: 인접 Snapshot 비교로 Changes 생성.
-- `src/components/DataSources.jsx`, `dataSources.css`: 데이터 출처 모달. 브라우저 기본 dialog를 사용합니다.
-- `src/hooks/useTftMatches.jsx`: 실제 검색 결과와 mock Replay를 `{match, replay}` 형태로 분리합니다.
-- `src/services/riotApi.js`, `tftStaticData.js`, `src/data/riotMatchMapper.js`: 기존 Riot 조회·정적 데이터·최종 조합 변환.
-- `server/riotProxy.js`, `server/index.js`: 기존 서버 전용 키와 로컬 프록시.
-- `src/styles.css`: 다크 테마와 육각형 보드, 데스크톱 중심 레이아웃.
+- `frontend/src/`: React 화면, Riot 조회 클라이언트, mock Replay 데이터와 스타일.
+- `frontend/assets/`: 앱 아이콘과 정적 에셋.
+- `backend/index.js`, `backend/riotProxy.js`: Riot API 키를 보관하는 외부 백엔드.
+- `desktop/electron/main.cjs`, `desktop/appServer.js`: Windows 데스크톱 앱 실행기와 내부 정적 파일 서버.
+- `tests/`: 프론트 데이터 변환과 백엔드 프록시 검사.
 - `tests/data.test.js`, `tests/riot.test.js`, `tests/replay.test.js`: 데모 무결성, Riot 프록시·변환, 어댑터·Changes 검사.
 
 ## Mock 범위

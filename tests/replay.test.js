@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mapGepDataToReplayRound, adaptGepRecording } from '../src/services/gepAdapter.js';
-import { compareReplaySnapshots } from '../src/utils/replayDiff.js';
-import { matches } from '../src/data/matches.js';
+import { mapGepDataToReplayRound, adaptGepRecording } from '../frontend/src/services/gepAdapter.js';
+import { compareReplaySnapshots } from '../frontend/src/utils/replayDiff.js';
+import { matches } from '../frontend/src/data/matches.js';
 
 const unit = (id, name, row, col, starLevel = 1, items = []) => ({ id, name, starLevel, position: { row, col }, items });
 const raw = () => ({ source: 'mock', stage: '3-2', round: 2, level: 6, hp: 82, gold: 0, result: 'WIN', streak: 2, board: [unit('ashe-1', 'Ashe', 2, 4)], bench: [{ id: 'jax-1', name: 'Jax', starLevel: 1, benchPosition: 7, items: [] }], traits: [{ name: 'Bastion', count: 2 }] });
