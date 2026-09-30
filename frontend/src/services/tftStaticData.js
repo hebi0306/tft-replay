@@ -1,6 +1,12 @@
 const CDN = 'https://ddragon.leagueoflegends.com';
 const catalogs = new Map();
 let versionsPromise;
+export async function loadTftDataFiles(locale = 'en_US') {
+  versionsPromise ||= json(`${CDN}/api/versions.json`).catch(error => { versionsPromise = undefined; throw error; });
+  const version = (await versionsPromise)[0];
+  const files = await Promise.all(['champion', 'item', 'trait'].map(async kind => [kind, await json(`${CDN}/cdn/${version}/data/${locale}/tft-${kind}.json`)]));
+  return { version, ...Object.fromEntries(files) };
+}
 async function json(url) {
   const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error(`Data Dragon HTTP ${response.status}`);

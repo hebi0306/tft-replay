@@ -1,5 +1,7 @@
+import { teamTranslations } from './teamTranslations.js';
 export const translations = {
   en: {
+    ...teamTranslations.en,
     settings: 'Settings', language: 'Language', close: 'Close', korean: '한국어', english: 'English',
     matchLibrary: 'Match library', roundReplay: 'Round replay', matchOverview: 'Match overview', postGameReview: 'Post-game review', mockData: 'MOCK DATA', mockReplay: 'MOCK REPLAY',
     riotApiMode: 'RIOT API MODE', demoData: 'DEMO DATA', independentPrototype: 'Independent prototype',
@@ -66,6 +68,7 @@ export const translations = {
     staticUnresolved: 'Some static names or images could not be found. Unknown identifiers remain in the internal data.',
   },
   ko: {
+    ...teamTranslations.ko,
     settings: '설정', language: '언어', close: '닫기', korean: '한국어', english: 'English',
     matchLibrary: '경기 목록', roundReplay: '라운드 복기', matchOverview: '경기 개요', postGameReview: '경기 종료 후 복기', mockData: '가상 데이터 (MOCK)', mockReplay: '가상 복기 (MOCK)',
     riotApiMode: 'RIOT API 모드', demoData: '데모 데이터', independentPrototype: '독립 프로토타입',
