@@ -1,3 +1,13 @@
+# Local screenshot replay (Windows)
+
+현재 실제 복기는 Riot API/GEP와 독립적인 화면 캡처 + 로컬 OCR + SQLite 방식을 사용합니다. 설치·기록·영역 보정·패키징·검증 한계는 [capture/README.md](capture/README.md)를 확인하세요. 기존 MOCK 어댑터는 데모만 담당합니다. 아래 이전 GEP 연동 계획은 이번 캡처 구현에 사용되지 않습니다.
+
+```powershell
+cd C:\tft
+npm run capture:setup
+npm start
+```
+
 # TFT Replay
 
 실제 Riot 경기 최종 결과와 독립된 simulated Replay를 보여주는 **OW-Electron 기반 Windows 데스크톱 앱**입니다. Riot API 키는 앱에 포함하지 않고 외부 backend에만 보관합니다.
@@ -70,7 +80,7 @@ OW-Electron main process (desktop/electron/main.cjs)
 
 조합은 `teamCompositionService.js`를 통해 localStorage의 `tft-replay-compositions-v1`에 저장합니다. 저장 필드는 ID, 이름, 챔피언/아이템 ID, 0부터 시작하는 행·열 위치, 생성·수정 시각입니다. 한국어/영어 설정에 맞춰 공식 Riot Data Dragon 이름과 이미지를 표시합니다. 세트 번호는 정적 데이터에서 감지하며 코드에 챔피언 목록을 고정하지 않습니다.
 
-공식 Data Dragon만 사용합니다. 현재 제공되지 않는 챔피언별 특성 연결·활성 조건과 아이템 설명·유형은 추정하지 않습니다. 특성 자동 계산을 사용할 수 없다는 안내와 공식 특성 목록을 표시합니다. 외부 CommunityDragon 데이터는 사용하지 않습니다.
+이름·이미지는 공식 Data Dragon을 사용하고, 동일 패치의 CommunityDragon에서 챔피언 특성 연결과 활성 조건을 보완합니다. 고유 챔피언별 기본 특성을 세어 활성 단계를 표시합니다. 상징과 화신 등 특수 추가 중첩은 계산에 포함하지 않으며 화면에 안내합니다. 데이터 로드 실패 시 조합 편집은 유지하고 특성 정보 미제공을 표시합니다.
 
 - `/`: Riot ID 검색으로 최근 실제 경기 최대 10개를 표시합니다. Demo data 모드는 기존 가상 경기 5개를 표시합니다.
 - `/match/:id`: 실제 최종 순위·레벨·골드·피해량·마지막 라운드·시간·유닛·아이템·특성. 실제 조합에는 보드 위치나 대기석을 만들지 않습니다.

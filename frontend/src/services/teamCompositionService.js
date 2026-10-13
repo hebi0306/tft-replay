@@ -7,9 +7,10 @@ export function validateComposition(value) {
   for (const unit of value.champions) {
     const { row, column } = unit.position || {};
     if (typeof unit.championId !== 'string' || !unit.championId || ids.has(unit.championId) || !Number.isInteger(row) || row < 0 || row > 3 || !Number.isInteger(column) || column < 0 || column > 6 || cells.has(row * 7 + column) || !Array.isArray(unit.items) || unit.items.length > 3 || unit.items.some(id => typeof id !== 'string' || !id)) throw new Error('compositionInvalid');
+    if (unit.stars !== undefined && ![1, 2, 3].includes(unit.stars)) throw new Error('compositionInvalid');
     ids.add(unit.championId); cells.add(row * 7 + column);
   }
-  return { name: value.name.trim(), champions: value.champions.map(unit => ({ championId: unit.championId, position: { row: unit.position.row, column: unit.position.column }, items: [...unit.items] })) };
+  return { name: value.name.trim(), champions: value.champions.map(unit => ({ championId: unit.championId, stars: unit.stars ?? 1, position: { row: unit.position.row, column: unit.position.column }, items: [...unit.items] })) };
 }
 export function getCompositions(storage = localStorage) {
   try {
@@ -56,7 +57,7 @@ export function placeChampion(units, championId, cell) {
   if (target && !existing) return units;
   const position = { row: Math.floor(cell / 7), column: cell % 7 };
   return existing ? units.map(unit => unit === existing ? { ...unit, position } : unit === target ? { ...unit, position: { ...existing.position } } : unit)
-    : [...units, { championId, position, items: [] }];
+    : [...units, { championId, position, stars: 1, items: [] }];
 }
 export function equipItem(units, championId, itemId, slot = null) {
   return units.map(unit => {
@@ -71,11 +72,18 @@ export function calculateTraits(units, catalog) {
   const counts = new Map();
   for (const id of new Set(units.map(unit => unit.championId))) {
     const champion = catalog.champions.find(c => c.id === id);
-    for (const trait of new Set(champion?.traits || [])) counts.set(trait, (counts.get(trait) || 0) + 1);
+    const traits = new Set(champion?.traits || []);
+    for (const unit of units.filter(unit => unit.championId === id)) {
+      for (const itemId of unit.items) {
+        const emblem = catalog.items?.find(item => item.id === itemId && item.type === 'emblem');
+        if (emblem?.traitId) traits.add(emblem.traitId);
+      }
+    }
+    for (const trait of traits) counts.set(trait, (counts.get(trait) || 0) + 1);
   }
   return [...counts].map(([id, count]) => {
     const trait = catalog.traits.find(t => t.id === id);
     const thresholds = (trait?.effects || []).map(effect => effect.minUnits).filter(Number.isFinite).sort((a, b) => a - b);
-    return { ...trait, id, name: trait?.name || id, count, active: thresholds.some(n => count >= n), next: thresholds.find(n => n > count) ?? thresholds.at(-1) ?? null };
+    return { ...trait, id, name: trait?.name || id, count, thresholds, tier: thresholds.filter(n => count >= n).length, active: thresholds.some(n => count >= n), next: thresholds.find(n => n > count) ?? thresholds.at(-1) ?? null };
   }).sort((a, b) => Number(b.active) - Number(a.active) || b.count - a.count);
 }

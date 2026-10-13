@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTftMatches } from '../hooks/useTftMatches.jsx';
 import { useLanguage } from '../i18n/LanguageProvider.jsx';
 import MatchCard from '../components/MatchCard.jsx';
+import LocalRecordings from '../components/LocalRecordings.jsx';
 import PlayerSearch from '../components/PlayerSearch.jsx';
 
 export default function HomePage() {
@@ -18,6 +19,7 @@ export default function HomePage() {
       <p>{t('heroSubtitle')}</p><p className="hero-description">{t('heroDescription')}</p>
       {matches[0] ? <Link className="button primary" to={`/match/${matches[0].id}`}>{t('reviewLatest')} <span>↗</span></Link> : <a className="button primary" href="#player-search">{t('findMatches')} ↓</a>}
     </div><div className="hero-art" aria-hidden="true"><div className="orbit orbit-one" /><div className="orbit orbit-two" /><div className="art-caption">{t('heroArtCaption')}</div><div className="art-tile tile-back"><span>★ ★</span>ORNN</div><div className="art-tile tile-mid"><span>★ ★</span>VOLIBEAR</div><div className="art-tile tile-front"><span>★ ★ ★</span><b>A</b>ASHE</div><div className="art-round"><span className="result-dot win" /> {t('illustration')} <b>{t('demoBoard')}</b></div></div></section>
+    <LocalRecordings />
     <PlayerSearch />
     <section className="summary-bar"><div><span>{t('matchesInLibrary')}</span><b>{matches.length} <small>{mode === 'riot' ? t('riotMatches') : t('demoMatches')}</small></b></div><div><span>{t('avgPlacement')}</span><b>{average} <small>{t('loadedMatches')}</small></b></div><div><span>{t('top4Rate')}</span><b>{top4}<small>%</small></b></div><div className="summary-note"><span className="record-icon">◉</span><p>{mode === 'riot' ? t('officialFinalResults') : t('localFictionalData')}<br /><span>{t('replayRemainsMock')}</span></p></div></section>
     <section className="library"><div className="section-heading"><div><div className="eyebrow">{mode === 'riot' && account ? `${account.gameName || t('player')} #${account.tagLine || ''}` : t('yourMatchLibrary')}</div><h2>{t('recentMatches')} <span>{matches.length}</span></h2></div><span className="library-label"><i /> {mode === 'riot' ? 'Riot API' : t('demoData')} · {t('newestFirst')}</span></div>

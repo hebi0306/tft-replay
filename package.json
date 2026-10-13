@@ -11,10 +11,13 @@
     "build": "vite build --config frontend/vite.config.js --configLoader runner",
     "preview": "vite preview --config frontend/vite.config.js --host 127.0.0.1 --configLoader runner",
     "start": "npm run build && ow-electron .",
-    "package": "npm run build && ow-electron-builder --publish=never",
+    "package": "npm run capture:bundle && npm run build && ow-electron-builder --publish=never",
     "build:ow-electron": "npm run package",
     "backend": "node backend/index.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "capture:setup": "\"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -ExecutionPolicy Bypass -File capture/setup.ps1",
+    "capture:test": ".capture-venv\\Scripts\\python.exe -m unittest discover -s capture -p test_*.py",
+    "capture:bundle": "\"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -ExecutionPolicy Bypass -File capture/bundle.ps1"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -24,8 +27,48 @@
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0"
   },
-  "overwolf": { "packages": ["gep"] },
-  "build": { "asar": true, "productName": "TFT Replay", "directories": { "output": "release" }, "files": ["dist/**/*", "desktop/**/*", "frontend/assets/**/*", "package.json"], "overwolf": { "requireSigning": false, "disableAdOptimization": true }, "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "frontend/assets/icon.ico", "artifactName": "${productName}-Setup-${version}.${ext}" }, "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true } },
+  "build": {
+    "asar": true,
+    "productName": "TFT Replay",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "frontend/assets/**/*",
+      "package.json"
+    ],
+    "overwolf": {
+      "requireSigning": false,
+      "disableAdOptimization": true
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "frontend/assets/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "extraResources": [
+      {
+        "from": "capture-dist/capture-service",
+        "to": "capture-service",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
+  },
   "devDependencies": {
     "@overwolf/ow-electron": "^42.7.1",
     "@overwolf/ow-electron-builder": "^26.9.3",

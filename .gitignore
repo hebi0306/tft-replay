@@ -8,3 +8,9 @@ dist/
 release/
 **/.electron-cache/
 .electron-cache/
+
+.capture-venv/
+capture-dist/
+capture-build/
+__pycache__/
+*.spec

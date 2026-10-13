@@ -1,4 +1,5 @@
 .app-header nav a:not(.active){border-color:transparent;color:var(--muted)}
+.team-traits>span{flex-wrap:wrap}.team-traits>span small{flex-basis:100%;color:var(--muted);padding-left:26px}.builder-traits .team-traits>span{width:100%}.team-traits>span b{margin-left:auto}
 .teams-page,.builder-page{max-width:1440px;margin:auto}
 .team-toolbar{display:flex;gap:14px;align-items:end;padding:20px;margin-bottom:15px;flex-wrap:wrap}
 .team-toolbar label{flex:1;min-width:220px;display:grid;gap:9px;font-size:12px;color:#bdcbbf}
@@ -20,3 +21,9 @@
 @media(max-width:1100px){.builder-layout{grid-template-columns:minmax(0,1fr) 240px}.builder-board{padding:30px 12px}.builder-unit-name{font-size:8px}.builder-equipped>span{width:13px;height:13px}.builder-equipped{height:13px}header.app-header{gap:24px}header.app-header nav{gap:20px}}
 @media(max-width:850px){.builder-layout{grid-template-columns:1fr}.builder-sidebar{grid-template-columns:1fr 1fr}.builder-palettes{grid-template-columns:1fr}.builder-unit-name{font-size:10px}.team-toolbar .mode-switch{width:100%}.team-toolbar .mode-switch button{flex:1}}
 @media(max-width:650px){header.app-header{flex-wrap:wrap;height:auto;padding-block:15px;gap:14px}header.app-header nav{display:flex;order:5;width:100%;height:35px;justify-content:center}.team-card-heading{align-items:flex-start;flex-direction:column}.teams-page .page-heading,.builder-page .page-heading{gap:20px;align-items:flex-start}.teams-page .page-heading h1,.builder-page .page-heading h1{font-size:29px}.team-card{padding:18px}.builder-sidebar{grid-template-columns:1fr}.builder-board{padding:25px 5px}.builder-unit-name{font-size:7px}.builder-hex{padding:8px 1px}.builder-hex-row{gap:2px;margin-top:-3px}.builder-equipped>span{width:10px;height:10px}.builder-equipped{height:10px;gap:1px}.palette{padding:16px}.team-toolbar{padding:16px}.teams-page .page-heading{flex-wrap:wrap}}
+
+.builder-sidebar .builder-traits{height:360px;min-height:0;overflow-x:hidden;overflow-y:scroll;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#627868 #19211e}
+
+.item-type-tabs{flex-wrap:wrap;margin-bottom:16px}.item-type-tabs button{flex:1;padding:8px 10px;white-space:nowrap}
+
+.builder-unit-image,.roster-portrait{position:relative}.unit-stars{position:absolute;top:0;left:0;right:0;color:#f4d276;background:#101815bb;font-size:10px;line-height:14px;text-align:center;pointer-events:none}.star-controls button{flex:1;color:#f4d276}
