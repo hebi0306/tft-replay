@@ -1,7 +1,9 @@
 export const captureTranslations = {
   en: {
+    captureHealthMode: 'HP detection', captureHealthAuto: 'Follow enlarged HP badge', captureHealthManual: 'Manual area', captureHealthOff: 'Disabled',
+    captureStagePreset_standard: 'Standard TFT HUD', captureStagePreset_extended: 'Extended round bar HUD',
     captureStat_health: 'HP', captureStat_gold: 'Gold', captureStat_level: 'Level',
-    captureStatRoiHint: 'Calibrate each numeric ROI (max 20% width / 15% height). HP is disabled until you select your own HP number; do not use another player’s scoreboard row. Recalibrate if that number moves. Unconfigured fields stay unknown.',
+    captureStatRoiHint: 'Calibrate each numeric ROI (max 20% width / 15% height). Automatic HP follows the enlarged gold badge as its row moves. Verify the preview on your own board; unsupported or ambiguous HUDs remain unknown. Manual HP areas need recalibration when the row moves.',
     captureDebug: 'Debug OCR: show ROI/raw text and save sample images during recording', captureDebug_roi: 'Original ROI', captureDebug_processed: 'Preprocessed ROI',
     capturePreviewStatsHint: 'Test capture shows a single reading. Saved values require at least two agreeing readings from three attempts.',
     captureStatsNote: 'Values are OCR estimates from up to three samples immediately after the screenshot. — means unknown, not zero. Previously recorded matches have no numeric data.',
@@ -29,8 +31,10 @@ export const captureTranslations = {
     already_recording: 'A recording is already running.', stop_pending: 'Recording is still stopping. Wait and check its status.', image_failed: 'Could not encode this screenshot.', match_missing: 'Local recording not found.', image_missing: 'Saved screenshot not found.', invalid_stage: 'Invalid round label.', invalid_command: 'Unsupported capture command.', service_failed: 'Capture service failed. Check capture dependencies and the desktop terminal log.',
   },
   ko: {
+    captureHealthMode: 'HP 인식 방식', captureHealthAuto: '큰 HP 표시 자동 추적', captureHealthManual: '영역 직접 지정', captureHealthOff: '비활성화',
+    captureStagePreset_standard: '일반 TFT HUD 적용', captureStagePreset_extended: '긴 라운드 바 HUD 적용',
     captureStat_health: 'HP', captureStat_gold: '골드', captureStat_level: '레벨',
-    captureStatRoiHint: '각 숫자 영역을 보정하세요(너비 20%, 높이 15% 이내). HP는 내 체력 숫자 위치를 지정하기 전까지 비활성화됩니다. 다른 플레이어의 순위표 행을 선택하지 마세요. 숫자 위치가 이동하면 다시 보정해야 합니다. 미설정 값은 인식 실패로 남습니다.',
+    captureStatRoiHint: '각 숫자 영역을 보정하세요(너비 20%, 높이 15% 이내). HP 자동 추적은 큰 금색 체력 표시를 따라갑니다. 내 보드에서 미리보기로 확인하세요. 표시가 없거나 모호하면 인식 실패로 남습니다. 직접 지정한 HP 영역은 순위가 바뀌면 다시 보정해야 합니다.',
     captureDebug: 'OCR 디버그: 영역·원문 표시 및 기록 중 샘플 이미지 저장', captureDebug_roi: '원본 영역', captureDebug_processed: '전처리 영역',
     capturePreviewStatsHint: '테스트 캡처는 한 번 읽은 값입니다. 실제 저장값은 3회 시도 중 최소 2회 일치해야 확정됩니다.',
     captureStatsNote: '스크린샷 직후 최대 3개 샘플에서 추정한 OCR 값입니다. —는 0이 아닌 인식 실패입니다. 이전 기록에는 숫자 데이터가 없습니다.',

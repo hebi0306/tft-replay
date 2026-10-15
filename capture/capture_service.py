@@ -29,6 +29,7 @@ def validate_options(options):
     if not isinstance(rois, dict): raise ValueError('invalid_options')
     for kind, config in STAT_CONFIG.items():
         roi = rois.get(kind, config['roi'])
+        if kind == 'health' and roi == 'auto': continue
         if roi is not None:
             normalized_roi(roi)
             if roi[2] > 0.2 or roi[3] > 0.15: raise ValueError('invalid_region')

@@ -54,15 +54,18 @@ class TftImageAnalyzer:
 
     def detect_stage(self, frame, roi):
         import cv2
-        region = crop(frame, roi)
-        gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
-        enlarged = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
-        # The ROI is already the single text line; skip detection and orientation models.
-        results, _ = self.ocr(enlarged, use_det=False, use_cls=False)
-        for text, confidence in results or []:
-            stage = parse_stage(text)
-            if stage and confidence >= 0.75:
-                return stage
+        from capture_config import STAGE_ROIS
+        # Round-bar length shifts the label between these two calibrated positions.
+        candidates = [roi] + [r for r in STAGE_ROIS if r != roi] if roi in STAGE_ROIS else [roi]
+        for candidate in candidates:
+            region = crop(frame, candidate)
+            gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
+            enlarged = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+            results, _ = self.ocr(enlarged, use_det=False, use_cls=False)
+            for text, confidence in results or []:
+                stage = parse_stage(text)
+                if stage and confidence >= 0.75:
+                    return stage
         return None
 
     def detect_stat(self, frame, kind, roi, debug=None):
@@ -91,6 +94,13 @@ class TftImageAnalyzer:
         return self.detect_stat(frame, 'gold', roi, debug)
 
     def detect_health(self, frame, roi, debug=None):
+        if roi == 'auto':
+            from health_detector import health_roi
+            roi = health_roi(frame)
+            if debug is not None: debug['trackedRoi'] = roi
+            if roi is None:
+                if debug is not None: debug.update(raw=[], parsed=None, error='health_badge_not_found')
+                return None
         return self.detect_stat(frame, 'health', roi, debug)
 
     def analyze_stats(self, frame, rois, debug=False):
