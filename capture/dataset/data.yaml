@@ -1,0 +1,6 @@
+# Run training with capture/dataset as the working directory.
+path: .
+train: images/train
+val: images/val
+names:
+  0: unit

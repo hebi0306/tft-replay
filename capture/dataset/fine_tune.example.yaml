@@ -1,0 +1,10 @@
+# Add labelled Set 18 images before using this file. Split by match, not by adjacent frames.
+path: .
+train:
+  - set17/images/train
+  - set18/images/train
+val:
+  - set17/images/val
+  - set18/images/val
+names:
+  0: unit

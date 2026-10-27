@@ -9,6 +9,9 @@ from analysis import StageTracker, TftImageAnalyzer, crop, normalized_roi
 from repository import MatchRepository
 from capture_config import STAT_CONFIG, STAT_SAMPLES
 from stat_detector import majority_stats
+from concurrent.futures import ThreadPoolExecutor
+from board_config import STABILIZE_SECONDS, MAX_WAIT_SECONDS
+from repository import now
 
 
 def validate_options(options):
@@ -52,6 +55,7 @@ class CaptureService:
         self.lock = threading.Lock()
         self.state = {'recording': False, 'matchId': None, 'stage': None, 'rounds': 0, 'warning': None}
         self.analyzer = None
+        self.stage_analyzer = None
 
     def status(self):
         with self.lock:
@@ -116,12 +120,39 @@ class CaptureService:
                     (directory / f'{kind}_{stage}_{index}_{name}.png').write_bytes(png_bytes(detail.pop(name)))
         (directory / f'{stage}_{index}.json').write_text(json.dumps({'details': details, 'values': values}, ensure_ascii=False, indent=2), encoding='utf-8')
 
+    def skip_board(self, match_id, stage, reason):
+        try:
+            self.repo.update_analysis(match_id, stage, {'schemaVersion': 1, 'stage': stage,
+                'board': [], 'bench': [], 'traits': [], 'traitsComplete': False,
+                'status': {'board': reason}, 'userCorrections': None})
+        except Exception as error:
+            print(f'[Board metadata failed] {error}', file=sys.stderr, flush=True)
+
+    def analyze_board(self, frame, match_id, stage, captured_at, debug):
+        try:
+            from stage_analyzer import TftStageAnalyzer
+            if self.stage_analyzer is None:
+                self.stage_analyzer = TftStageAnalyzer()
+            directory = self.repo.root / match_id / 'debug' / stage if debug else None
+            result = self.stage_analyzer.analyze(frame, stage, directory)
+            result.update(capturedAt=captured_at, source='stabilized_frame')
+            # Keep the exact analyzed frame separate from the existing immediate screenshot.
+            image = png_bytes(frame) if result['status']['board'] == 'ready' else None
+            self.repo.update_analysis(match_id, stage, result, image)
+            print(f"[Board Saved] {stage}: {result['status']['board']}", file=sys.stderr, flush=True)
+            print('[Unit detections] ' + json.dumps({'stage': stage, **result.get('unitDetections', {})}), file=sys.stderr, flush=True)
+        except Exception as error:
+            print(f'[Board analysis failed] {error}', file=sys.stderr, flush=True)
+            self.skip_board(match_id, stage, 'analysis_failed')
+
     def record(self, options, match_id):
         import mss
         from window_detector import capture_frame
         tracker = StageTracker()
         failed = False
         pending = None
+        pending_board, board_future = None, None
+        board_worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix='tft-board')
         def finish_stats():
             nonlocal pending
             if not pending: return
@@ -142,6 +173,9 @@ class CaptureService:
                     with mss.mss() as sct:
                         frame = capture_frame(sct, options)
                     stage = self.analyzer.detect_stage(frame, options['stageRoi'])
+                    if pending_board and ((stage is not None and stage != pending_board['stage']) or time.monotonic() > pending_board['expires']):
+                        self.skip_board(match_id, pending_board['stage'], 'stable_frame_unavailable')
+                        pending_board = None
                     if pending and stage is not None and stage != pending['stage']:
                         finish_stats()
                     confirmed = tracker.observe(stage)
@@ -155,6 +189,8 @@ class CaptureService:
                             break
                         print(f'[Stage Confirmed] {confirmed}', file=sys.stderr, flush=True)
                         pending = {'stage': confirmed, 'samples': [], 'attempts': 0}
+                        pending_board = {'stage': confirmed, 'due': time.monotonic() + STABILIZE_SECONDS,
+                                         'expires': time.monotonic() + MAX_WAIT_SECONDS}
                         tracker.commit(confirmed)
                         self.update(stage=confirmed, rounds=self.status()['rounds'] + 1)
                     if pending:
@@ -169,6 +205,12 @@ class CaptureService:
                                 try: self.save_debug(match_id, pending['stage'], pending['attempts'], frame, details, values)
                                 except Exception as error: print(f'[Debug save failed] {error}', file=sys.stderr, flush=True)
                         if pending['attempts'] >= STAT_SAMPLES: finish_stats()
+                    if pending_board and stage == pending_board['stage'] and time.monotonic() >= pending_board['due']:
+                        if board_future is None or board_future.done():
+                            board_future = board_worker.submit(self.analyze_board, frame.copy(), match_id, stage, now(), options.get('debug', False))
+                        else:
+                            self.skip_board(match_id, stage, 'analysis_busy')
+                        pending_board = None
                 except Exception as error:
                     tracker.observe(None)
                     if pending:
@@ -182,6 +224,9 @@ class CaptureService:
             self.update(warning='capture_failed')
         finally:
             finish_stats()
+            if pending_board:
+                self.skip_board(match_id, pending_board['stage'], 'stable_frame_unavailable')
+            board_worker.shutdown(wait=True)
             try:
                 self.repo.finish(match_id, 'interrupted' if failed else 'completed')
             except Exception:

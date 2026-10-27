@@ -1,4 +1,5 @@
 import base64
+import json
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -26,6 +27,8 @@ class MatchRepository:
             for name in ('health', 'gold', 'level'):
                 if name not in columns:
                     db.execute(f'ALTER TABLE rounds ADD COLUMN {name} INTEGER')
+            if 'analysis_json' not in columns:
+                db.execute('ALTER TABLE rounds ADD COLUMN analysis_json TEXT')
             # A previous worker died: retain its rounds and expose it as interrupted.
             db.execute("UPDATE matches SET ended_at=?, status='interrupted' WHERE ended_at IS NULL", (now(),))
 
@@ -78,6 +81,29 @@ class MatchRepository:
             db.execute('UPDATE rounds SET health=?,gold=?,level=? WHERE match_id=? AND stage=?',
                        (values.get('health'), values.get('gold'), values.get('level'), match_id, stage))
 
+    def update_analysis(self, match_id, stage, result, png=None):
+        from analysis import parse_stage
+        if parse_stage(stage) != stage or not isinstance(result, dict) or result.get('stage') != stage:
+            raise ValueError('invalid_analysis')
+        for name, limit in [('board', 28), ('bench', 9), ('traits', 128)]:
+            if not isinstance(result.get(name), list) or len(result[name]) > limit:
+                raise ValueError('invalid_analysis')
+        encoded = json.dumps(result, ensure_ascii=False, allow_nan=False)
+        if len(encoded) > 200000:
+            raise ValueError('analysis_too_large')
+        with self.connect() as db:
+            if not db.execute('SELECT id FROM rounds WHERE match_id=? AND stage=?', (match_id, stage)).fetchone():
+                raise ValueError('match_missing')
+            if png is not None:
+                path = f'{match_id}/{stage}.analysis.png'
+                target = self.root / path
+                temporary = target.with_suffix('.tmp')
+                temporary.write_bytes(png)
+                temporary.replace(target)
+                result = {**result, 'imagePath': path}
+                encoded = json.dumps(result, ensure_ascii=False, allow_nan=False)
+            db.execute('UPDATE rounds SET analysis_json=? WHERE match_id=? AND stage=?', (encoded, match_id, stage))
+
     def matches(self):
         with self.connect() as db:
             return [dict(row) for row in db.execute('''SELECT m.*, COUNT(r.id) AS round_count FROM matches m
@@ -88,7 +114,19 @@ class MatchRepository:
             row = db.execute('SELECT * FROM matches WHERE id=?', (match_id,)).fetchone()
             if not row:
                 raise ValueError('match_missing')
-            return {**dict(row), 'rounds': [dict(r) for r in db.execute('SELECT id,stage,captured_at,health,gold,level FROM rounds WHERE match_id=? ORDER BY id', (match_id,))]}
+            rounds = []
+            for record in db.execute('SELECT id,stage,captured_at,health,gold,level,analysis_json FROM rounds WHERE match_id=? ORDER BY id', (match_id,)):
+                value = dict(record)
+                raw = value.pop('analysis_json')
+                try:
+                    detail = json.loads(raw) if raw else None
+                    if not isinstance(detail, dict):
+                        detail = None
+                except (TypeError, ValueError):
+                    detail = None
+                value.update(analysis=detail, **{key: detail.get(key) if detail else None for key in ('board', 'bench', 'traits')})
+                rounds.append(value)
+            return {**dict(row), 'rounds': rounds}
 
     def image(self, round_id):
         with self.connect() as db:

@@ -10,7 +10,24 @@ release/
 .electron-cache/
 
 .capture-venv/
+.training-venv/
+Ultralytics/
+capture/dataset/set17/
+capture/dataset/set18/
 capture-dist/
 capture-build/
 __pycache__/
 *.spec
+
+# Local training data and downloaded static references
+capture/models/*.onnx
+capture/models/*.pt
+capture/training-runs/
+capture/data/catalog.json
+capture/data/references.json
+capture/data/items/
+capture/data/portraits/
+capture/data/crops/
+capture/dataset/images/**/*.png
+capture/dataset/images/**/*.jpg
+capture/dataset/labels/**/*.txt
