@@ -52,11 +52,17 @@ class TftImageAnalyzer:
         from rapidocr_onnxruntime import RapidOCR
         self.ocr = RapidOCR(intra_op_num_threads=1, inter_op_num_threads=1)
 
-    def detect_stage(self, frame, roi):
+    def detect_stage(self, frame, roi, debug=None):
         import cv2
         from capture_config import STAGE_ROIS
         # Round-bar length shifts the label between these two calibrated positions.
         candidates = [roi] + [r for r in STAGE_ROIS if r != roi] if roi in STAGE_ROIS else [roi]
+        from hud_detector import locate_hud
+        tracked = locate_hud(frame, 'stage') if roi in STAGE_ROIS else None
+        if tracked:
+            candidates.insert(0, tracked['roi'])
+        if debug is not None:
+            debug.update(trackedRoi=tracked['roi'] if tracked else None, anchorConfidence=tracked['confidence'] if tracked else None)
         for candidate in candidates:
             region = crop(frame, candidate)
             gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY)
@@ -65,6 +71,8 @@ class TftImageAnalyzer:
             for text, confidence in results or []:
                 stage = parse_stage(text)
                 if stage and confidence >= 0.75:
+                    if debug is not None:
+                        debug.update(selectedRoi=candidate, source='tracked' if tracked and candidate == tracked['roi'] else 'fixed', parsed=stage)
                     return stage
         return None
 
@@ -88,10 +96,26 @@ class TftImageAnalyzer:
         return value
 
     def detect_level(self, frame, roi, debug=None):
-        return self.detect_stat(frame, 'level', roi, debug)
+        return self.detect_hud_stat(frame, 'level', roi, debug)
 
     def detect_gold(self, frame, roi, debug=None):
-        return self.detect_stat(frame, 'gold', roi, debug)
+        return self.detect_hud_stat(frame, 'gold', roi, debug)
+
+    def detect_hud_stat(self, frame, kind, roi, debug=None):
+        from capture_config import STAT_CONFIG, HUD_TRACKING
+        from hud_detector import locate_hud
+        # Explicit user calibration takes precedence; defaults automatically track the HUD.
+        automatic = roi == STAT_CONFIG[kind]['roi'] or roi in HUD_TRACKING[kind]['presets']
+        tracked = locate_hud(frame, kind) if automatic else None
+        if debug is not None:
+            debug.update(trackedRoi=tracked['roi'] if tracked else None, anchorConfidence=tracked['confidence'] if tracked else None)
+        if tracked:
+            value = self.detect_stat(frame, kind, tracked['roi'], debug)
+            if value is not None:
+                if debug is not None: debug.update(source='tracked', selectedRoi=tracked['roi'])
+                return value
+        if debug is not None: debug.update(source='fixed', selectedRoi=roi)
+        return self.detect_stat(frame, kind, roi, debug)
 
     def detect_health(self, frame, roi, debug=None):
         if roi == 'auto':

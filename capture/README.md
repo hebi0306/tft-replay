@@ -111,6 +111,14 @@ An extended-HUD live recording saved stage 1-4, gold 10 and level 3 through the 
 
 Tests move the real badge crop across three rows at 1280×720, 1920×1080 and 2560×1440; absent/duplicate badges return null. An integration test runs real OCR on generated stage/gold/level labels with that badge through the recording loop, SQLite and image retrieval. This is controlled-image evidence, not a completed live match. Debug output includes the dynamically selected `trackedRoi`.
 
+### Automatic round / gold / level tracking (2026-10-28)
+
+Standard and extended presets now locate HUD anchors before OCR: the round icon, gold icon, and experience-purchase chevrons for the level label. `hud_detector.py` searches only bounded HUD strips and supports nearby icon scales. Templates are cropped from the existing authorized game capture and included by the existing assets bundle rule.
+
+If an anchor is absent, ambiguous, unavailable, or its digit OCR fails, the original preset coordinates are retried. Explicit custom coordinates and disabled numeric fields remain unchanged; selecting a preset restores tracking. Existing three-frame round confirmation and numeric voting remain in place. Debug numeric metadata includes `trackedRoi`, `anchorConfidence`, `selectedRoi`, and `source`. Preview round metadata is in `stageTracking`, and the displayed rectangle/crop uses the selected ROI.
+
+Checks cover real HUD crops moved in both axes, resized to 720p/1080p/1440p, and reduced HUD scale; missing/duplicate icons, OCR fallback and manual overrides are tested. Saved real 2-6/2-7 screenshots retained HP80/74, Gold45/56 and Level4 in the integrated storage check. This is offline validation; new live gameplay, arbitrary aspect ratios, alternate skins and all HUD scales have not been verified. No installer was generated.
+
 ### Final verification and packaging
 
 A live standard match recorded the 2-6 → 2-7 transition with gold 45 → 56 and level 4. HP initially failed against varying scenery; after restricting comparison to the badge interior, reprocessing those saved real screenshots produced HP 80 → 74. The game had closed before a further live run with that final fix. The production replay component was exercised in an isolated Electron profile using the packaged worker: selecting each round showed the expected three values and the exact matching image data. Full-match accuracy, other HUD skins, spectator mode and single-digit HP have not been verified. Use this automatic HP mode for standard TFT; the extended-HUD preset disables HP to avoid treating lives as health.

@@ -1,5 +1,28 @@
 # Set 17 unit 기본 모델
 
+## 실행 결과 (2026-10-28)
+
+- YOLO11n / unit 1개 클래스 / 640px / batch 16 / 10 epochs / GTX 1070.
+- 학습 4,716장·16,220 boxes, 검증 524장·1,794 boxes. 전체 5,240장 해시가 원본 revision과 일치하고 train/val 동일 파일 중복은 0개.
+- 검증 precision 0.99777, recall 0.99889, mAP50 0.99499, mAP50–95 0.94422. **Set 17 합성 검증 점수이며 Set 18 정확도가 아닙니다.**
+- `capture/models/unit.onnx` 연결 완료. 입력 `[1,3,640,640]`, 출력 `[1,5,8400]`, CPU ONNX Runtime 로딩 `ready`.
+- 모델 SHA256: `987cf927bbe7a227bb504dea65590f6f55a70f49053045cd120d62ed706ee53f`.
+
+실제로 저장된 Set 18 화면 4장에 confidence 0.65 기준으로 실행했습니다. 아래 개수는 **예측 박스 개수**이며 정답 개수나 정확도가 아닙니다.
+
+| 화면 | 보드 ROI 탐지 | 벤치 ROI 탐지 | confidence 범위 |
+| --- | ---: | ---: | --- |
+| 1-4 (`phase2-preview`) | 1 | 1 | 0.726–0.878 |
+| 2-4 회전초밥 (`phase2-current`) | 8 | 0 | 0.652–0.825 |
+| 2-6 | 3 | 0 | 0.730–0.905 |
+| 2-7 | 4 | 0 | 0.719–0.767 |
+
+시각 검수에서 실제 유닛 일부를 찾았지만 **벤치·겹친 유닛 누락이 많고 회전초밥의 아이템 표시 오탐**이 확인됐습니다. 현재 모델은 기본 학습 결과로 보존하며 실사용 정확도 확보에는 Set 18 fine-tuning이 필요합니다. 회전초밥·전투·상대 유닛을 자동 구별하지 못하므로 Hex 매핑은 확정 배치가 아닙니다. 보드 경계에서 잘린 박스는 raw 로그에만 남기고 배치에서는 제외합니다.
+
+실시간 게임을 새로 실행한 테스트는 하지 않았습니다. 저장된 실제 프레임을 사용한 통합 검사에서는 2-6 HP80/Gold45/Level4, 2-7 HP74/Gold56/Level4와 스크린샷·unit 분석 결과를 함께 저장하고 다시 읽는 데 성공했습니다. Python 테스트 29개와 Node 테스트 24개가 통과했습니다.
+
+상세 JSON/이미지: `capture-build/set18-unit-evaluation/`. 통합 저장 검사: `capture-build/set17-integration/result.json`. 앱의 소스 실행(`npm start`)에서 재시작하면 새 모델을 읽습니다. 이전에 만든 설치 앱은 이 소스 경로의 모델을 자동으로 읽지 않습니다.
+
 ## 데이터 출처
 
 https://huggingface.co/datasets/Ashen0li/tft-set17-unit-detector-yolo

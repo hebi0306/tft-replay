@@ -17,3 +17,10 @@ HEALTH_TRACKING = {
 }
 
 STAGE_ROIS = [[0.397, 0.002, 0.025, 0.028], [0.428, 0.002, 0.025, 0.028], [0.365, 0.006, 0.028, 0.029]]
+
+# Search only HUD strips. Digit offsets are relative to the matched icon, at 1920x1080.
+HUD_TRACKING = {
+    'stage': {'search': (560, 0, 560, 100), 'digits': (26, -1, 50, 30)},
+    'gold': {'search': (800, 760, 460, 260), 'digits': (24, -13, 45, 35), 'presets': [[0.476, 0.807, 0.02, 0.032]]},
+    'level': {'search': (300, 820, 400, 230), 'digits': (-141, -70, 29, 34), 'presets': [[0.122, 0.807, 0.015, 0.032]]},
+}

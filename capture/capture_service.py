@@ -88,9 +88,13 @@ class CaptureService:
         for detail in details.values():
             for name in ('roi', 'processed'):
                 if name in detail: detail[name] = 'data:image/png;base64,' + base64.b64encode(png_bytes(detail[name])).decode('ascii')
-        return {'stats': values, 'debug': details, 'image': 'data:image/png;base64,' + base64.b64encode(png_bytes(frame)).decode('ascii'),
-                'roiImage': 'data:image/png;base64,' + base64.b64encode(png_bytes(crop(frame, options['stageRoi']))).decode('ascii'),
-                'stage': self.analyzer.detect_stage(frame, options['stageRoi'])}
+        stage_detail = {}
+        stage = self.analyzer.detect_stage(frame, options['stageRoi'], stage_detail)
+        selected_roi = stage_detail.get('selectedRoi', options['stageRoi'])
+        return {'stats': values, 'debug': details, 'stageTracking': stage_detail,
+                'image': 'data:image/png;base64,' + base64.b64encode(png_bytes(frame)).decode('ascii'),
+                'roiImage': 'data:image/png;base64,' + base64.b64encode(png_bytes(crop(frame, selected_roi))).decode('ascii'),
+                'stage': stage}
 
     def start(self, options):
         from window_detector import game_windows
