@@ -111,6 +111,15 @@ class TftImageAnalyzer:
             debug.update(trackedRoi=tracked['roi'] if tracked else None, anchorConfidence=tracked['confidence'] if tracked else None)
         if tracked:
             value = self.detect_stat(frame, kind, tracked['roi'], debug)
+            # The narrow ROI excludes localized labels but can clip the zero in level 10.
+            if kind == 'level' and value == 1:
+                wide = tracked['roi'].copy()
+                wide[2] *= 38 / 29
+                detail = {}
+                if wide[0] + wide[2] <= 1 and self.detect_stat(frame, kind, wide, detail) == 10:
+                    value = 10
+                    tracked['roi'] = wide
+                    if debug is not None: debug.update(detail, trackedRoi=wide)
             if value is not None:
                 if debug is not None: debug.update(source='tracked', selectedRoi=tracked['roi'])
                 return value

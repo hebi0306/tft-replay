@@ -36,6 +36,14 @@ class HudTests(unittest.TestCase):
                     self.assertEqual(actual, value, (dx,dy,width,kind,detail))
                     self.assertEqual(detail['source'], 'tracked', (dx,dy,width,kind,detail))
 
+    def test_two_digit_level_is_not_truncated(self):
+        im = cv2.imdecode(np.fromfile(Path(__file__).parent / 'fixtures' / 'hud-level10.png', dtype=np.uint8), cv2.IMREAD_COLOR)
+        for width, height in [(1280, 720), (1920, 1080), (2560, 1440)]:
+            frame = np.zeros((1080, 1920, 3), np.uint8)
+            frame[865:1000, 235:460] = im
+            frame = cv2.resize(frame, (width, height))
+            self.assertEqual(self.analyzer.detect_level(frame, STAT_CONFIG['level']['roi']), 10)
+
     def test_hud_scale_can_change_independently_of_resolution(self):
         frame = fixture_frame(0, 10, .85)
         for kind in ('stage', 'gold', 'level'):

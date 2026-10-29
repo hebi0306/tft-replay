@@ -8,7 +8,8 @@ STABILIZE_SECONDS = 1.5
 MAX_WAIT_SECONDS = 6.0
 # Include bodies above the front-row cell centers; y=.31 cut off real units.
 BOARD_ROI = [0.20, 0.22, 0.62, 0.43]
-BENCH_ROI = [0.20, 0.65, 0.62, 0.12]
+# Calibrated slot edges x=360..1440 at 1920px; a wider crop merges adjacent slot assignments.
+BENCH_ROI = [0.1875, 0.65, 0.5625, 0.12]
 # shortcut: initial own-side geometry; calibrate these centers for the arena/camera before trusting positions.
 HEX_ROWS = [(0.300, 0.365, 0.072), (0.273, 0.445, 0.077),
             (0.275, 0.525, 0.081), (0.245, 0.605, 0.086)]

@@ -6,7 +6,7 @@ from unittest.mock import patch
 import cv2
 import numpy as np
 from board_geometry import hex_grid, nearest_hex, bench_slots, extract_board_region
-from board_config import BOARD_ROI
+from board_config import BOARD_ROI, BENCH_ROI
 from unit_detector import UnitDetector, decode_detections
 from reference_matcher import ReferenceMatcher
 from stage_analyzer import TftStageAnalyzer
@@ -80,6 +80,20 @@ class BoardAnalysisTests(unittest.TestCase):
             with repo.connect() as db:
                 db.execute("UPDATE rounds SET analysis_json='[1,2]' WHERE match_id=?", (match,))
             self.assertIsNone(repo.match(match)['rounds'][0]['analysis'])
+
+    def test_nine_real_bench_positions_keep_separate_slots(self):
+        # Observed body centers on the recorded 1920x1080 bench, including asymmetric poses.
+        centers = [420, 535, 650, 767, 891, 1006, 1130, 1244, 1360]
+        with tempfile.TemporaryDirectory() as root:
+            analyzer = TftStageAnalyzer(Path(root), Path(root) / 'missing.onnx')
+            for width, height in [(1920, 1080), (1280, 720), (2560, 1440)]:
+                scale = width / 1920
+                ox = int(BENCH_ROI[0] * width)
+                detections = [{'box': [(x-22)*scale-ox, 10*scale, (x+22)*scale-ox, 95*scale],
+                               'confidence': .9} for x in centers]
+                with patch.object(analyzer.detector, 'detect', side_effect=[[], detections]):
+                    result = analyzer.analyze(np.zeros((height, width, 3), np.uint8))
+                self.assertEqual([b['slot'] for b in result['bench'] if b['bbox'] is not None], list(range(9)))
 
     def test_geometry_scales_and_rejects_outside_and_nonfinite_points(self):
         grid = hex_grid()
