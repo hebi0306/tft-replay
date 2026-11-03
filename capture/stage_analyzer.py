@@ -40,6 +40,7 @@ class TftStageAnalyzer:
         save('bench', bench_region)
         status = {'board': self.detector.status,
                   'bench': self.detector.status,
+                  'positions': 'estimated_phase_and_ownership_unverified',
                   'champions': 'ready' if self.details.champions.samples else 'references_missing',
                   'items': 'ready' if all(ITEM_ROIS) and self.details.items.samples else 'calibration_or_references_missing',
                   'stars': 'ready' if STAR_ROI and self.details.stars.samples else 'calibration_or_references_missing'}
@@ -70,13 +71,15 @@ class TftStageAnalyzer:
             if y2 >= board_region.shape[0] - 1:
                 rejected += 1
                 continue
-            cell = nearest_hex((box[0] + box[2]) / (2 * width), (box[1] + box[3]) / (2 * height))
+            # Body midpoint moves with unit height; use the visible body's foot estimate.
+            anchor = [(box[0] + box[2]) / (2 * width), (box[3] - .05 * (box[3] - box[1])) / height]
+            cell = nearest_hex(*anchor)
             if cell is None:
                 rejected += 1
                 continue
             key = (cell['row'], cell['col'])
             if key not in cells or detection['confidence'] > cells[key]['confidence']:
-                cells[key] = {**detection, 'box': box, **cell}
+                cells[key] = {**detection, 'box': box, 'anchor': anchor, **cell}
         board, bench = [], []
         overlay = frame.copy() if directory else None
         if overlay is not None:
@@ -92,7 +95,9 @@ class TftStageAnalyzer:
             save(prefix, region)
             detail = self.details.analyze(region, lambda name, image: save(prefix + '_' + name, image))
             entry = {**detail, 'row': unit['row'], 'col': unit['col'], 'bbox': unit['box'],
-                     'detectionConfidence': unit['confidence']}
+                     'detectionConfidence': unit['confidence'],
+                     'position': {'normalizedX': unit['anchor'][0], 'normalizedY': unit['anchor'][1],
+                                  'method': 'body-foot-estimate', 'verified': False}}
             board.append(entry)
             if overlay is not None:
                 x1, y1, x2, y2 = map(int, unit['box'])
@@ -103,10 +108,16 @@ class TftStageAnalyzer:
             region = crop(frame, roi)
             prefix = f'bench_slot_{slot}'
             save(prefix, region)
-            detail = self.details.analyze(region, lambda name, image: save(prefix + '_' + name, image))
-            empty = self.details.empty.identify(region)
             detected = detected_slots.get(slot)
-            if detected is not None or (detail['championId'] is not None and empty['id'] is None):
+            identity_region = box_crop(bench_region, detected['box']) if detected else region
+            save(prefix + '_unit', identity_region)
+            detail = self.details.analyze(identity_region, lambda name, image: save(prefix + '_' + name, image))
+            empty = self.details.empty.identify(region)
+            if detected is None:
+                detail['championId'], detail['confidence'] = None, 0.0
+                detail['identityMethod'], detail['identityInliers'] = None, None
+                detail['identityPaletteScore'] = None
+            if detected is not None:
                 occupancy = 'unit'
             elif empty['id'] == 'empty' and detail['championId'] is None:
                 occupancy = 'empty'

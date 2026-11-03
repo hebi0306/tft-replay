@@ -1,6 +1,6 @@
 """Read an offline export of the existing frontend TFT catalog and labelled crop references."""
 import json
-from board_config import DATA_DIR
+from board_config import DATA_DIR, CHAMPION_MATCH_CONFIDENCE, CHAMPION_MATCH_MARGIN
 from reference_matcher import ReferenceMatcher
 
 
@@ -20,6 +20,8 @@ class TftCatalog:
     def matcher(self, kind):
         allowed = self.champions if kind == 'champions' else self.items if kind == 'items' else {'1', '2', '3'} if kind == 'stars' else {'empty'}
         entries = [e for e in self.references.get(kind, []) if e.get('id') in allowed]
+        if kind == 'champions':
+            return ReferenceMatcher(entries, self.root, CHAMPION_MATCH_CONFIDENCE, CHAMPION_MATCH_MARGIN, align=True)
         return ReferenceMatcher(entries, self.root)
 
     def get_champion_by_id(self, champion_id):

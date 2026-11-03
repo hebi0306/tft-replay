@@ -23,7 +23,7 @@ def decode_detections(output, scale, padding, size, threshold=UNIT_CONFIDENCE):
             boxes.append([float(x1), float(y1), float(x2 - x1), float(y2 - y1)])
             scores.append(float(score))
     keep = cv2.dnn.NMSBoxes(boxes, scores, threshold, NMS_IOU)
-    return [{'box': [boxes[i][0], boxes[i][1], boxes[i][0] + boxes[i][2], boxes[i][1] + boxes[i][3]],
+    return [{'box': [boxes[i][0], boxes[i][1], min(float(width), boxes[i][0] + boxes[i][2]), min(float(height), boxes[i][1] + boxes[i][3])],
              'confidence': scores[i]} for i in np.asarray(keep).reshape(-1)[:28]]
 
 

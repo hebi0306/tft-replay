@@ -1,3 +1,5 @@
+> 이전 모델 기록입니다. 현재 모델/좌표 보정은 LOCATION_DETECTION_V6.md를 참고하세요.
+
 # Unit 위치 탐지 v4 — 2026-10-29
 
 현재 `capture/models/unit.onnx`에 적용된 모델은 `set18-location-v4`입니다. 단일 `unit` 클래스 위치 탐지이며 챔피언 이름 분류 모델은 아닙니다.

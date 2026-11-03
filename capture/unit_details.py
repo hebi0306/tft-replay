@@ -26,5 +26,8 @@ class UnitDetails:
                 result = self.items.identify(item_crop)
             items.append({'itemId': result['id'], 'confidence': result['confidence']})
         return {'championId': champion['id'], 'confidence': champion['confidence'],
+                'identityMethod': champion.get('method', 'template-similarity'),
+                'identityInliers': champion.get('inliers'),
+                'identityPaletteScore': champion.get('paletteScore'),
                 'star': int(star['id']) if star['id'] else None, 'starConfidence': star['confidence'],
                 'items': [v['itemId'] for v in items], 'itemDetails': items}

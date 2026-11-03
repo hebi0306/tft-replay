@@ -1,0 +1,592 @@
+{
+  "set": 18,
+  "source": "user_requested_roster",
+  "note": "Roster coverage is not recognition accuracy. Costs supplied by user. No reference is invented from a name.",
+  "champions": [
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Akali_AD",
+      "nameKo": "아칼리",
+      "nameEn": "Akali",
+      "requestedCost": 1,
+      "referenceImages": 3,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Camille",
+      "nameKo": "카밀",
+      "nameEn": "Camille",
+      "requestedCost": 1,
+      "referenceImages": 5,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Cinderling18",
+      "nameKo": "불타는 묘목",
+      "nameEn": "Cinderling",
+      "requestedCost": 1,
+      "referenceImages": 7,
+      "referenceMatches": 4,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Karma18",
+      "nameKo": "카르마",
+      "nameEn": "Karma",
+      "requestedCost": 1,
+      "referenceImages": 1,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Kobuko",
+      "nameKo": "코부코",
+      "nameEn": "Kobuko",
+      "requestedCost": 1,
+      "referenceImages": 9,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Leona",
+      "nameKo": "레오나",
+      "nameEn": "Leona",
+      "requestedCost": 1,
+      "referenceImages": 5,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Ornn",
+      "nameKo": "오른",
+      "nameEn": "Ornn",
+      "requestedCost": 1,
+      "referenceImages": 2,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Sentry",
+      "nameKo": "조약돌",
+      "nameEn": "Pebbles",
+      "requestedCost": 1,
+      "referenceImages": 7,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Rakan",
+      "nameKo": "라칸",
+      "nameEn": "Rakan",
+      "requestedCost": 1,
+      "referenceImages": 7,
+      "referenceMatches": 3,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_RekSai",
+      "nameKo": "렉사이",
+      "nameEn": "Rek'Sai",
+      "requestedCost": 1,
+      "referenceImages": 2,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Varus",
+      "nameKo": "바루스",
+      "nameEn": "Varus",
+      "requestedCost": 1,
+      "referenceImages": 7,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Veigar",
+      "nameKo": "베이가",
+      "nameEn": "Veigar",
+      "requestedCost": 1,
+      "referenceImages": 11,
+      "referenceMatches": 3,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Xayah",
+      "nameKo": "자야",
+      "nameEn": "Xayah",
+      "requestedCost": 1,
+      "referenceImages": 6,
+      "referenceMatches": 3,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Yorick",
+      "nameKo": "요릭",
+      "nameEn": "Yorick",
+      "requestedCost": 1,
+      "referenceImages": 3,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Alistar",
+      "nameKo": "알리스타",
+      "nameEn": "Alistar",
+      "requestedCost": 2,
+      "referenceImages": 5,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Caitlyn",
+      "nameKo": "케이틀린",
+      "nameEn": "Caitlyn",
+      "requestedCost": 2,
+      "referenceImages": 7,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Elise",
+      "nameKo": "엘리스",
+      "nameEn": "Elise",
+      "requestedCost": 2,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Gromp18_AP",
+      "nameKo": "심술두꺼비",
+      "nameEn": "Gromp",
+      "requestedCost": 2,
+      "referenceImages": 5,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Kayle",
+      "nameKo": "케일",
+      "nameEn": "Kayle",
+      "requestedCost": 2,
+      "referenceImages": 1,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_LeBlanc",
+      "nameKo": "르블랑",
+      "nameEn": "LeBlanc",
+      "requestedCost": 2,
+      "referenceImages": 10,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Murkwolf18",
+      "nameKo": "어스름늑대",
+      "nameEn": "Murkwolf",
+      "requestedCost": 2,
+      "referenceImages": 9,
+      "referenceMatches": 3,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Scuttlecrab18",
+      "nameKo": "바위게",
+      "nameEn": "Scuttlecrab",
+      "requestedCost": 2,
+      "referenceImages": 10,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Sejuani",
+      "nameKo": "세주아니",
+      "nameEn": "Sejuani",
+      "requestedCost": 2,
+      "referenceImages": 5,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Shen",
+      "nameKo": "쉔",
+      "nameEn": "Shen",
+      "requestedCost": 2,
+      "referenceImages": 18,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Teemo",
+      "nameKo": "티모",
+      "nameEn": "Teemo",
+      "requestedCost": 2,
+      "referenceImages": 6,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Warwick",
+      "nameKo": "워윅",
+      "nameEn": "Warwick",
+      "requestedCost": 2,
+      "referenceImages": 1,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Yunara",
+      "nameKo": "유나라",
+      "nameEn": "Yunara",
+      "requestedCost": 2,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Azir",
+      "nameKo": "아지르",
+      "nameEn": "Azir",
+      "requestedCost": 3,
+      "referenceImages": 2,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Cassiopeia",
+      "nameKo": "카시오페아",
+      "nameEn": "Cassiopeia",
+      "requestedCost": 3,
+      "referenceImages": 2,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Diana",
+      "nameKo": "다이애나",
+      "nameEn": "Diana",
+      "requestedCost": 3,
+      "referenceImages": 4,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Fiddlesticks18",
+      "nameKo": "피들스틱",
+      "nameEn": "Fiddlesticks",
+      "requestedCost": 3,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Hecarim",
+      "nameKo": "헤카림",
+      "nameEn": "Hecarim",
+      "requestedCost": 3,
+      "referenceImages": 4,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_KhaZix",
+      "nameKo": "카직스",
+      "nameEn": "Kha'Zix",
+      "requestedCost": 3,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_KogMaw18_AD",
+      "nameKo": "코그모",
+      "nameEn": "Kog'Maw",
+      "requestedCost": 3,
+      "referenceImages": 2,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Krug18",
+      "nameKo": "돌거북",
+      "nameEn": "Krug",
+      "requestedCost": 3,
+      "referenceImages": 15,
+      "referenceMatches": 3,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_CrimsonRaptor18",
+      "nameKo": "어미 부리",
+      "nameEn": "Mama Beak",
+      "requestedCost": 3,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_MasterYi_AD",
+      "nameKo": "마스터 이",
+      "nameEn": "Master Yi",
+      "requestedCost": 3,
+      "referenceImages": 1,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Rammus",
+      "nameKo": "람머스",
+      "nameEn": "Rammus",
+      "requestedCost": 3,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Rengar",
+      "nameKo": "렝가",
+      "nameEn": "Rengar",
+      "requestedCost": 3,
+      "referenceImages": 1,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Tristana",
+      "nameKo": "트리스타나",
+      "nameEn": "Tristana",
+      "requestedCost": 3,
+      "referenceImages": 5,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Vi18",
+      "nameKo": "바이",
+      "nameEn": "Vi",
+      "requestedCost": 3,
+      "referenceImages": 1,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Ahri",
+      "nameKo": "아리",
+      "nameEn": "Ahri",
+      "requestedCost": 4,
+      "referenceImages": 1,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Amumu18",
+      "nameKo": "아무무",
+      "nameEn": "Amumu",
+      "requestedCost": 4,
+      "referenceImages": 1,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Aphelios",
+      "nameKo": "아펠리오스",
+      "nameEn": "Aphelios",
+      "requestedCost": 4,
+      "referenceImages": 2,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Brambleback18",
+      "nameKo": "덩굴정령",
+      "nameEn": "Brambleback",
+      "requestedCost": 4,
+      "referenceImages": 2,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Ezreal",
+      "nameKo": "이즈리얼",
+      "nameEn": "Ezreal",
+      "requestedCost": 4,
+      "referenceImages": 2,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Lillia",
+      "nameKo": "릴리아",
+      "nameEn": "Lillia",
+      "requestedCost": 4,
+      "referenceImages": 5,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Malphite",
+      "nameKo": "말파이트",
+      "nameEn": "Malphite",
+      "requestedCost": 4,
+      "referenceImages": 2,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Morgana",
+      "nameKo": "모르가나",
+      "nameEn": "Morgana",
+      "requestedCost": 4,
+      "referenceImages": 4,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Nidalee18_AP",
+      "nameKo": "니달리",
+      "nameEn": "Nidalee",
+      "requestedCost": 4,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Sentinel18",
+      "nameKo": "감시자",
+      "nameEn": "Sentinel",
+      "requestedCost": 4,
+      "referenceImages": 5,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Sett",
+      "nameKo": "세트",
+      "nameEn": "Sett",
+      "requestedCost": 4,
+      "referenceImages": 7,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Sivir",
+      "nameKo": "시비르",
+      "nameEn": "Sivir",
+      "requestedCost": 4,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Soraka",
+      "nameKo": "소라카",
+      "nameEn": "Soraka",
+      "requestedCost": 4,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Zyra",
+      "nameKo": "자이라",
+      "nameEn": "Zyra",
+      "requestedCost": 4,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Alune",
+      "nameKo": "알룬",
+      "nameEn": "Alune",
+      "requestedCost": 5,
+      "referenceImages": 4,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Ashe",
+      "nameKo": "애쉬",
+      "nameEn": "Ashe",
+      "requestedCost": 5,
+      "referenceImages": 6,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Draven18",
+      "nameKo": "드레이븐",
+      "nameEn": "Draven",
+      "requestedCost": 5,
+      "referenceImages": 6,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_ElderDragon",
+      "nameKo": "장로 드래곤",
+      "nameEn": "Elder Dragon",
+      "requestedCost": 5,
+      "referenceImages": 2,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_GnarSmall",
+      "nameKo": "나르",
+      "nameEn": "Gnar",
+      "requestedCost": 5,
+      "referenceImages": 7,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Ivern",
+      "nameKo": "아이번",
+      "nameEn": "Ivern",
+      "requestedCost": 5,
+      "referenceImages": 2,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Kennen",
+      "nameKo": "케넨",
+      "nameEn": "Kennen",
+      "requestedCost": 5,
+      "referenceImages": 8,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Lux18_Base",
+      "nameKo": "럭스",
+      "nameEn": "Lux",
+      "requestedCost": 5,
+      "referenceImages": 7,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_18_Maokai",
+      "nameKo": "마오카이",
+      "nameEn": "Maokai",
+      "requestedCost": 5,
+      "referenceImages": 3,
+      "referenceMatches": 1,
+      "status": "references_available_not_accuracy_verified"
+    },
+    {
+      "championId": "Maps/Shipping/Map22/Sets/TFTSet18/Shop/DA_Taric18",
+      "nameKo": "타릭",
+      "nameEn": "Taric",
+      "requestedCost": 5,
+      "referenceImages": 8,
+      "referenceMatches": 2,
+      "status": "references_available_not_accuracy_verified"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 export const captureTranslations = {
   en: {
     captureBoardAnalysis: "Board analysis details",
-    captureBoardAnalysisNote: "Experimental detected data. Empty arrays do not mean an empty board when the model is unavailable. Unknown units and items are null; traits may be partial. A stabilized frame is analyzed separately from the original screenshot.",
+    captureBoardAnalysisNote: "Experimental detected data. Empty arrays do not mean an empty board when the model is unavailable. Unknown units and items are null; traits may be partial. Positions are estimates from the visible body, not confirmed pre-combat placements. A stabilized frame is analyzed separately from the original screenshot.",
     captureBoardStatus_model_missing: "Unit detection model is not installed.",
     captureBoardStatus_model_invalid: "The unit model could not be loaded or has an unsupported format.",
     captureBoardStatus_ready: "Detection ran; check confidence and calibration before using these estimates.",
@@ -41,7 +41,7 @@ export const captureTranslations = {
   },
   ko: {
     captureBoardAnalysis: "보드 분석 상세",
-    captureBoardAnalysisNote: "실험적인 인식 결과입니다. 모델이 없을 때 빈 배열은 빈 보드를 뜻하지 않습니다. 모르는 챔피언·아이템은 null이며 특성은 일부만 계산될 수 있습니다. 기존 스크린샷과 별도로 안정화된 프레임을 분석합니다.",
+    captureBoardAnalysisNote: "실험적인 인식 결과입니다. 모델이 없을 때 빈 배열은 빈 보드를 뜻하지 않습니다. 모르는 챔피언·아이템은 null이며 특성은 일부만 계산될 수 있습니다. 위치는 보이는 몸체로 추정한 값이며 전투 전 확정 배치가 아닙니다. 기존 스크린샷과 별도로 안정화된 프레임을 분석합니다.",
     captureBoardStatus_model_missing: "챔피언 위치 탐지 모델이 설치되지 않았습니다.",
     captureBoardStatus_model_invalid: "탐지 모델을 읽지 못했거나 지원하지 않는 형식입니다.",
     captureBoardStatus_ready: "탐지를 실행했습니다. 신뢰도와 좌표 보정 상태를 확인하세요.",

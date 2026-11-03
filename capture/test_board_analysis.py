@@ -53,6 +53,19 @@ class BoardAnalysisTests(unittest.TestCase):
             self.assertEqual(result['bench'][1]['occupancy'], 'unknown')
             self.assertEqual(result['unitDetections']['bench'], [detection])
 
+    def test_bench_identity_uses_detected_body_not_background_slot(self):
+        with tempfile.TemporaryDirectory() as root:
+            analyzer = TftStageAnalyzer(Path(root), Path(root) / 'missing.onnx')
+            frame = np.zeros((1080,1920,3), np.uint8)
+            frame[712:742,370:390] = [10,80,220]
+            detection = {'box': [10.,10.,30.,40.], 'confidence': .9}
+            with patch.object(analyzer.detector, 'detect', side_effect=[[],[detection]]), \
+                 patch.object(analyzer.details, 'analyze', wraps=analyzer.details.analyze) as analyze:
+                analyzer.analyze(frame)
+            body = analyze.call_args_list[0].args[0]
+            self.assertEqual(body.shape, (30,20,3))
+            self.assertTrue(np.all(body == [10,80,220]))
+
     def test_calibrated_item_and_star_regions_use_shared_matchers(self):
         with tempfile.TemporaryDirectory() as root:
             details = UnitDetails(TftCatalog(Path(root)))
@@ -95,6 +108,23 @@ class BoardAnalysisTests(unittest.TestCase):
                     result = analyzer.analyze(np.zeros((height, width, 3), np.uint8))
                 self.assertEqual([b['slot'] for b in result['bench'] if b['bbox'] is not None], list(range(9)))
 
+    def test_recorded_body_feet_map_to_observed_placement_cells(self):
+        # Manually inspected bodies in 20261028_044235 / 2-7; not generated from hex_grid.
+        examples = [([744,358,835,469], (0,2)), ([849,358,950,466], (0,3)),
+                    ([552,465,660,556], (1,0)), ([550,608,594,677], (3,0)),
+                    ([672,629,742,696], (3,1))]
+        with tempfile.TemporaryDirectory() as root:
+            analyzer = TftStageAnalyzer(Path(root), Path(root) / 'missing.onnx')
+            for width, height in [(1920,1080), (1280,720), (2560,1440)]:
+                scale = width/1920
+                detections = [{'box': [a*scale-int(BOARD_ROI[0]*width), b*scale-int(BOARD_ROI[1]*height),
+                                       c*scale-int(BOARD_ROI[0]*width), d*scale-int(BOARD_ROI[1]*height)],
+                               'confidence': .9} for (a,b,c,d), _ in examples]
+                with patch.object(analyzer.detector, 'detect', side_effect=[detections, []]):
+                    result = analyzer.analyze(np.zeros((height,width,3), np.uint8))
+                self.assertEqual([(v['row'],v['col']) for v in result['board']], [cell for _,cell in examples])
+                self.assertTrue(all(v['position']['verified'] is False for v in result['board']))
+
     def test_geometry_scales_and_rejects_outside_and_nonfinite_points(self):
         grid = hex_grid()
         self.assertEqual(len(grid), 28)
@@ -105,6 +135,16 @@ class BoardAnalysisTests(unittest.TestCase):
                                  {'row': cell['row'], 'col': cell['col']})
         self.assertIsNone(nearest_hex(0, 0))
         self.assertIsNone(nearest_hex(float('nan'), 0))
+
+    def test_decoded_edge_boxes_remain_inside_crop_after_float_rounding(self):
+        from board_geometry import box_crop
+        rng = np.random.default_rng(17)
+        frame = np.zeros((129,1080,3), np.uint8)
+        for _ in range(100):
+            raw = np.array([[[rng.uniform(0,640)], [rng.uniform(280,360)],
+                             [rng.uniform(200,1600)], [rng.uniform(50,500)], [.9]]], np.float32)
+            for detection in decode_detections(raw, 640/1080, (0,282), (1080,129)):
+                self.assertGreater(box_crop(frame, detection['box']).size, 0)
 
     def test_onnx_decode_letterbox_confidence_and_nms(self):
         values = np.array([[[320, 321, 70], [320, 321, 100], [100, 100, 10], [80, 80, 10], [.9, .8, .1]]], np.float32)
@@ -133,6 +173,88 @@ class BoardAnalysisTests(unittest.TestCase):
             self.assertIsNone(matcher.identify(image)['id'])
             with self.assertRaises(ValueError): ReferenceMatcher([{'id': 'a', 'file': '../outside.png'}], root)
 
+    def test_champion_alignment_recovers_small_crop_shift_and_rejects_ambiguity(self):
+        with tempfile.TemporaryDirectory() as root:
+            image = np.random.default_rng(17).integers(0, 255, (48, 48, 3), dtype=np.uint8)
+            (Path(root) / 'a.png').write_bytes(cv2.imencode('.png', image)[1].tobytes())
+            query = cv2.warpAffine(image, np.float32([[1, 0, 3], [0, 1, -2]]), (48, 48))
+            entries = [{'id': 'a', 'file': 'a.png'}]
+            self.assertIsNone(ReferenceMatcher(entries, root, .85, .15).identify(query)['id'])
+            matcher = ReferenceMatcher(entries, root, .85, .15, align=True)
+            self.assertEqual(matcher.identify(query)['id'], 'a')
+            self.assertIsNone(matcher.identify(np.zeros_like(query))['id'])
+            entries.append({'id': 'b', 'file': 'a.png'})
+            self.assertIsNone(ReferenceMatcher(entries, root, .85, .15, align=True).identify(query)['id'])
+            flat = np.full_like(image, (0, 100, 255))
+            (Path(root) / 'flat.png').write_bytes(cv2.imencode('.png', flat)[1].tobytes())
+            self.assertIsNone(ReferenceMatcher([{'id': 'flat', 'file': 'flat.png'}], root, align=True).identify(query)['id'])
+
+    def test_champion_alignment_recovers_small_scale_change(self):
+        with tempfile.TemporaryDirectory() as root:
+            image = np.random.default_rng(23).integers(0, 255, (48, 48, 3), dtype=np.uint8)
+            (Path(root) / 'a.png').write_bytes(cv2.imencode('.png', image)[1].tobytes())
+            matcher = ReferenceMatcher([{'id': 'a', 'file': 'a.png'}], root, .85, .15, align=True)
+            for size in (36, 44):
+                query = np.zeros((48, 48, 3), np.uint8)
+                offset = (48 - size) // 2
+                query[offset:offset+size, offset:offset+size] = cv2.resize(image[4:44,4:44], (size,size))
+                self.assertEqual(matcher.identify(query)['id'], 'a')
+            unrelated = np.random.default_rng(24).integers(0, 255, (48,48,3), dtype=np.uint8)
+            self.assertIsNone(matcher.identify(unrelated)['id'])
+
+    def test_champion_alignment_tolerates_noise_and_small_translation(self):
+        with tempfile.TemporaryDirectory() as root:
+            rng = np.random.default_rng(52)
+            image = rng.integers(20, 230, (96, 96, 3), dtype=np.uint8)
+            (Path(root) / 'sample.png').write_bytes(cv2.imencode('.png', image)[1].tobytes())
+            matcher = ReferenceMatcher([{'id': 'unit', 'file': 'sample.png'}], root, .85, .15, align=True)
+            for offset in (-4, 0, 4):
+                query = cv2.warpAffine(image, np.float32([[1, 0, offset], [0, 1, offset]]), (96,96))
+                query = np.clip(query.astype(float) + rng.normal(0, 6, query.shape), 0, 255).astype(np.uint8)
+                self.assertEqual(matcher.identify(query)['id'], 'unit')
+
+    def test_feature_fallback_requires_geometric_support_and_rejects_ties(self):
+        from champion_features import features, compare
+        rng = np.random.default_rng(88)
+        image = np.zeros((256,256,3), np.uint8)
+        for _ in range(90):
+            center = tuple(map(int, rng.integers(25,230,2)))
+            color = tuple(map(int, rng.integers(40,255,3)))
+            cv2.circle(image, center, int(rng.integers(3,10)), color, -1)
+        query = cv2.warpAffine(image, cv2.getRotationMatrix2D((128,128), 7, 1.03), (256,256))
+        self.assertGreaterEqual(compare(features(query), features(image)), 8)
+        self.assertEqual(compare(features(np.zeros_like(image)), features(image)), 0)
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / 'unit.png').write_bytes(cv2.imencode('.png', image)[1].tobytes())
+            entries = [{'id': 'a', 'file': 'unit.png'}]
+            matcher = ReferenceMatcher(entries, root, threshold=1.01, align=True)
+            result = matcher.identify(query)
+            self.assertEqual(result['id'], 'a')
+            self.assertEqual(result['method'], 'body-feature-geometry')
+            self.assertGreaterEqual(result['inliers'], 8)
+            entries.append({'id': 'b', 'file': 'unit.png'})
+            self.assertIsNone(ReferenceMatcher(entries, root, threshold=1.01, align=True).identify(query)['id'])
+
+    def test_bench_template_does_not_create_unit_without_detection(self):
+        with tempfile.TemporaryDirectory() as root:
+            analyzer = TftStageAnalyzer(Path(root), Path(root) / 'missing.onnx')
+            guessed = {'championId': 'a', 'confidence': 1., 'star': None, 'starConfidence': 0.,
+                       'items': [None]*3, 'itemDetails': []}
+            with patch.object(analyzer.detector, 'detect', side_effect=[[],[]]), \
+                 patch.object(analyzer.details, 'analyze', side_effect=lambda *_: dict(guessed)):
+                result = analyzer.analyze(np.zeros((720,1280,3), np.uint8))
+            self.assertTrue(all(v['championId'] is None and v['occupancy']=='unknown' for v in result['bench']))
+
+    def test_champion_threshold_does_not_lower_item_threshold(self):
+        with tempfile.TemporaryDirectory() as root:
+            catalog = TftCatalog(Path(root))
+            self.assertEqual(catalog.matcher('champions').threshold, .85)
+            self.assertEqual(catalog.matcher('champions').margin, .15)
+            self.assertTrue(catalog.matcher('champions').align)
+            self.assertFalse(catalog.matcher('items').align)
+            self.assertEqual(catalog.matcher('items').threshold, .92)
+            self.assertEqual(catalog.matcher('items').margin, .06)
+
     def test_board_deduplicates_cells_not_champions_and_bench_stays_unknown(self):
         with tempfile.TemporaryDirectory() as root:
             analyzer = TftStageAnalyzer(Path(root), Path(root) / 'missing.onnx')
@@ -141,7 +263,7 @@ class BoardAnalysisTests(unittest.TestCase):
             detections = []
             for cell, confidence in [(cells[0], .7), (cells[0], .9), (cells[1], .8)]:
                 x, y = (cell['centerX'] - BOARD_ROI[0]) * 1920, (cell['centerY'] - BOARD_ROI[1]) * 1080
-                detections.append({'box': [x-20, y-20, x+20, y+20], 'confidence': confidence})
+                detections.append({'box': [x-20, y-38, x+20, y+2], 'confidence': confidence})
             frame = np.zeros((1080, 1920, 3), np.uint8)
             with patch.object(analyzer.detector, 'detect', side_effect=[detections, []]):
                 result = analyzer.analyze(frame, '3-2')

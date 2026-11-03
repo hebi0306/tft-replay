@@ -10,15 +10,19 @@ MAX_WAIT_SECONDS = 6.0
 BOARD_ROI = [0.20, 0.22, 0.62, 0.43]
 # Calibrated slot edges x=360..1440 at 1920px; a wider crop merges adjacent slot assignments.
 BENCH_ROI = [0.1875, 0.65, 0.5625, 0.12]
-# shortcut: initial own-side geometry; calibrate these centers for the arena/camera before trusting positions.
-HEX_ROWS = [(0.300, 0.365, 0.072), (0.273, 0.445, 0.077),
-            (0.275, 0.525, 0.081), (0.245, 0.605, 0.086)]
-HEX_MAX_DISTANCE = 0.045
+# Measured cell centers from the visible placement grid at 1920x1080.
+# shortcut: standard camera calibration; other arenas/camera transforms require recalibration.
+HEX_ROWS = [(565/1920, 450/1080, 114/1920), (606/1920, 520/1080, 118/1920),
+            (536/1920, 595/1080, 123/1920), (576/1920, 675/1080, 130/1920)]
+HEX_MAX_DISTANCE = 0.035
 MODEL_SIZE = 640
 UNIT_CONFIDENCE = 0.65
 NMS_IOU = 0.45
 MATCH_CONFIDENCE = 0.92
 MATCH_MARGIN = 0.06
+# Champion body scores are similarities, not probabilities; reject ambiguous names.
+CHAMPION_MATCH_CONFIDENCE = 0.85
+CHAMPION_MATCH_MARGIN = 0.15
 # Relative to a unit bounding box. Unknown until calibrated on labelled game crops.
 STAR_ROI = None
 ITEM_ROIS = [None, None, None]
