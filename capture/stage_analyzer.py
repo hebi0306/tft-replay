@@ -1,5 +1,6 @@
 """One stabilized-frame analysis per stage. Never fabricates missing model predictions."""
 import json
+from copy import deepcopy
 from pathlib import Path
 import cv2
 from analysis import crop
@@ -7,6 +8,7 @@ from board_config import BOARD_ROI, BENCH_ROI, DATA_DIR, MODEL_PATH, STAR_ROI, I
 from board_geometry import extract_board_region, extract_bench_region, hex_grid, nearest_hex, bench_slots, box_crop
 from unit_detector import UnitDetector
 from unit_details import UnitDetails
+from unit_hud import UnitHud
 from tft_catalog import TftCatalog
 from trait_calculator import calculate_traits
 
@@ -16,6 +18,7 @@ class TftStageAnalyzer:
         self.catalog = TftCatalog(Path(data_dir))
         self.detector = UnitDetector(model_path)
         self.details = UnitDetails(self.catalog)
+        self.hud = UnitHud(self.catalog)
 
     def analyze(self, frame, stage=None, debug_dir=None):
         directory = Path(debug_dir) if debug_dir is not None else None
@@ -63,23 +66,29 @@ class TftStageAnalyzer:
                 detected_slots[slot] = detection
         height, width = frame.shape[:2]
         ox, oy = int(BOARD_ROI[0] * width), int(BOARD_ROI[1] * height)
-        cells, rejected = {}, 0
+        cells, rejected, unplaced = {}, 0, []
         for detection in detections:
             x1, y1, x2, y2 = detection['box']
             box = [x1 + ox, y1 + oy, x2 + ox, y2 + oy]
             # Tall bench units can protrude into the board ROI; keep clipped boxes raw, not as a board placement.
             if y2 >= board_region.shape[0] - 1:
                 rejected += 1
+                unplaced.append({**detection, 'box': box, 'reason': 'position_unresolved'})
                 continue
             # Body midpoint moves with unit height; use the visible body's foot estimate.
             anchor = [(box[0] + box[2]) / (2 * width), (box[3] - .05 * (box[3] - box[1])) / height]
             cell = nearest_hex(*anchor)
             if cell is None:
                 rejected += 1
+                unplaced.append({**detection, 'box': box, 'reason': 'position_unresolved'})
                 continue
             key = (cell['row'], cell['col'])
             if key not in cells or detection['confidence'] > cells[key]['confidence']:
+                if key in cells:
+                    unplaced.append({**cells[key], 'reason': 'cell_conflict'})
                 cells[key] = {**detection, 'box': box, 'anchor': anchor, **cell}
+            else:
+                unplaced.append({**detection, 'box': box, 'reason': 'cell_conflict'})
         board, bench = [], []
         overlay = frame.copy() if directory else None
         if overlay is not None:
@@ -135,10 +144,35 @@ class TftStageAnalyzer:
                                 (int(bbox[0]), max(15, int(bbox[1])-5)), cv2.FONT_HERSHEY_SIMPLEX, .4, (255, 180, 0), 1)
             bench.append({'slot': slot, 'occupancy': occupancy, **detail, 'bbox': bbox,
                           'detectionConfidence': detected['confidence'] if detected else None})
-        traits, complete = calculate_traits(board, self.catalog, status['board'] == 'ready' and rejected == 0)
+        unassigned = []
+        for unit in unplaced:
+            detail = self.details.analyze(box_crop(frame, unit['box']))
+            unassigned.append({**detail, 'bbox': unit['box'], 'row': None, 'col': None,
+                               'detectionConfidence': unit['confidence'],
+                               'position': {'method': unit['reason'], 'verified': False}})
+        hud_observations = []
+        try:
+            hud_units = deepcopy(board + bench + unassigned)
+            hud_observations = self.hud.apply(frame, hud_units, save) or []
+            references = ([{'collection': 'board', 'index': i} for i in range(len(board))]
+                          + [{'collection': 'bench', 'index': i} for i in range(len(bench))]
+                          + [{'collection': 'unassignedUnits', 'index': i} for i in range(len(unassigned))])
+            for observation in hud_observations:
+                index = observation.get('unitIndex')
+                observation['unitRef'] = references[index] if index is not None else None
+            for unit, analyzed in zip(board + bench + unassigned, hud_units):
+                unit.update(analyzed)
+            if self.hud.badges:
+                status['stars'] = 'experimental_rank_badge'
+                status['items'] = 'experimental_header_icons' if self.hud.items.samples else 'references_missing'
+        except Exception as error:
+            status['stars'] = status['items'] = 'hud_analysis_failed'
+            status['hudError'] = type(error).__name__
+        traits, complete = calculate_traits(board, self.catalog, status['board'] == 'ready' and not unplaced)
         if status['board'] != 'ready':
             complete = False
         result = {'schemaVersion': 1, 'stage': stage, 'board': board, 'bench': bench, 'traits': traits,
+                  'unassignedUnits': unassigned, 'hudObservations': hud_observations,
                   'status': status, 'traitsComplete': complete,
                   'catalogVersion': self.catalog.data.get('version'), 'set': self.catalog.data.get('currentSet'),
                   'method': 'unit-onnx+template-similarity', 'rejectedPositions': rejected,

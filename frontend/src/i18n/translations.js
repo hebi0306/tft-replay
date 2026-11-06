@@ -1,9 +1,11 @@
+import { localReplayTranslations } from './localReplayTranslations.js';
 import { captureTranslations } from './captureTranslations.js';
 import { teamTranslations } from './teamTranslations.js';
 export const translations = {
   en: {
     ...teamTranslations.en,
     ...captureTranslations.en,
+    ...localReplayTranslations.en,
     settings: 'Settings', language: 'Language', close: 'Close', korean: '한국어', english: 'English',
     matchLibrary: 'Match library', roundReplay: 'Round replay', matchOverview: 'Match overview', postGameReview: 'Post-game review', mockData: 'MOCK DATA', mockReplay: 'MOCK REPLAY',
     riotApiMode: 'RIOT API MODE', demoData: 'DEMO DATA', independentPrototype: 'Independent prototype',
@@ -72,6 +74,7 @@ export const translations = {
   ko: {
     ...teamTranslations.ko,
     ...captureTranslations.ko,
+    ...localReplayTranslations.ko,
     settings: '설정', language: '언어', close: '닫기', korean: '한국어', english: 'English',
     matchLibrary: '경기 목록', roundReplay: '라운드 복기', matchOverview: '경기 개요', postGameReview: '경기 종료 후 복기', mockData: '가상 데이터 (MOCK)', mockReplay: '가상 복기 (MOCK)',
     riotApiMode: 'RIOT API 모드', demoData: '데모 데이터', independentPrototype: '독립 프로토타입',
@@ -81,7 +84,7 @@ export const translations = {
     heroSubtitle: 'TFT 경기를 라운드별로 돌아보세요.',
     heroDescription: '실제 게임 화면을 로컬에 기록하고 라운드별로 복기하세요. Riot 최종 결과와 MOCK 예시도 별도로 볼 수 있습니다.',
     reviewLatest: '최근 경기 보기', findMatches: '내 경기 찾기', heroArtCaption: '되감고, 돌아보고, 다시 배우세요.', illustration: '일러스트', demoBoard: '데모 보드',
-    matchesInLibrary: '목록의 경기', riotMatches: 'Riot 경기', demoMatches: '데모 경기', avgPlacement: '평균 순위',
+    matchesInLibrary: '목록의 경기', riotMatches: 'Riot 경기', demoMatches: '데모 경기', avgPlacement: '평균 등수',
     loadedMatches: '불러온 경기', top4Rate: 'TOP 4 비율', officialFinalResults: 'Riot 공식 최종 경기 결과입니다.', localFictionalData: '로컬 가상 경기 데이터입니다.',
     replayRemainsMock: '라운드 복기는 가상 데모입니다.', yourMatchLibrary: '내 경기 목록', player: '플레이어', recentMatches: '최근 경기',
     newestFirst: '최신순', loadingMatches: 'TFT 경기를 불러오는 중…', loadingDetail: '계정, 경기 기록, 정적 이미지를 조회하고 있습니다.',

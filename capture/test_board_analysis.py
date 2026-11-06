@@ -31,6 +31,9 @@ class BoardAnalysisTests(unittest.TestCase):
             self.assertEqual(result['board'], [])
             self.assertEqual(result['unitDetections']['board'], [detection])
             self.assertEqual(result['rejectedPositions'], 1)
+            self.assertEqual(len(result['unassignedUnits']), 1)
+            self.assertEqual(result['unassignedUnits'][0]['position']['method'], 'position_unresolved')
+            self.assertIsNone(result['unassignedUnits'][0]['row'])
             self.assertFalse(result['traitsComplete'])
 
     def test_training_labels_require_single_class_and_normalized_finite_boxes(self):

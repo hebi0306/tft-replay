@@ -1,0 +1,26 @@
+[
+  {
+    "id": "TFTSet18/Set18_Items/DA_GargoyleStoneplate",
+    "file": "gargoyle.png",
+    "source": "20261029_021213_de7fd0cb9fc9/2-7.analysis.png",
+    "bbox": [
+      915,
+      322,
+      939,
+      346
+    ],
+    "review": "assistant_visual_confirmation_against_catalog"
+  },
+  {
+    "id": "TFTSet18/Set18_Items/DA_GargoyleStoneplate",
+    "file": "gargoyle-shield.png",
+    "source": "C:\\Users\\\u3147\u3147\\AppData\\Roaming\\tft-replay\\recordings\\20261105_041714_3eb819a254a9\\2-3.analysis.png",
+    "bbox": [
+      863,
+      325,
+      887,
+      349
+    ],
+    "review": "assistant_visual_confirmation_against_catalog; calibration_not_independent_test"
+  }
+]

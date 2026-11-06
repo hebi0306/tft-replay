@@ -6,8 +6,8 @@ export function BoardUnit({ unit, compact = false }) {
   const color = colors[unit.name.charCodeAt(0) % colors.length];
   const items = (unit.items || []).map(item => typeof item === 'string' ? { name: item } : item);
   return <div className={`unit ${compact ? 'compact' : ''}`} style={{ '--unit-color': color }} title={`${unit.name} · ${unit.star ? t('stars', { count: unit.star }) : t('unknown')}${items.length ? ` · ${items.map(item => item.name).join(', ')}` : ` · ${t('noItems')}`}`}>
-    <span className="unit-stars">{unit.star ? '★'.repeat(unit.star) : '☆'}</span><span className="unit-sigil"><AssetIcon src={unit.image} name={unit.name} fallback={unit.name.slice(0, 2).toUpperCase()} /></span><span className="unit-name">{unit.name}</span>
-    {!compact && <span className="unit-items">{items.map((item, index) => <span key={index} title={item.name} aria-label={item.name}><AssetIcon src={item.image} name={item.name} fallback={item.name.split(' ').map(word => word[0]).join('')} /></span>)}</span>}
+    <span className={unit.star ? 'unit-stars' : 'unit-stars is-unknown'}>{unit.star ? '★'.repeat(unit.star) : '☆'}</span><span className="unit-sigil"><AssetIcon src={unit.image} name={unit.name} fallback={unit.unknown ? '?' : unit.name.slice(0, 2).toUpperCase()} /></span><span className="unit-name">{unit.name}</span>
+    {!compact && <span className="unit-items">{items.map((item, index) => <span key={index} title={item.name} aria-label={item.name}><AssetIcon src={item.image} name={item.name} fallback={item.unknown ? '?' : item.name.split(' ').map(word => word[0]).join('')} /></span>)}</span>}
   </div>;
 }
 export function FinalComposition({ units }) {
@@ -25,10 +25,10 @@ export default function Board({ units }) {
     <div className="board-caption"><span>{t('yourSide')}</span><span>{t('unitsDeployed', { count: units.length })}</span></div>
   </div>;
 }
-export function Bench({ units }) {
+export function Bench({ units, showItems = false }) {
   const { t } = useLanguage();
   return <div className="bench"><div className="bench-label">{t('bench').toUpperCase()}<span>{units.length} / 9</span></div><div className="bench-slots">{Array.from({ length: 9 }, (_, i) => {
     const unit = units.find((unit, index) => (unit.benchPosition ?? index) === i);
-    return <div className="bench-slot" key={i} aria-label={`${t('benchSlot', { slot: i + 1 })}: ${unit?.name || t('empty')}`}>{unit && <BoardUnit unit={unit} compact />}</div>;
+    return <div className="bench-slot" key={i} aria-label={`${t('benchSlot', { slot: i + 1 })}: ${unit?.name || t('empty')}`}>{unit && <BoardUnit unit={unit} compact={!showItems} />}</div>;
   })}</div></div>;
 }

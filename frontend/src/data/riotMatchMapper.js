@@ -4,7 +4,7 @@ const number = value => typeof value === 'number' && Number.isFinite(value) ? va
 export const formatDuration = seconds => number(seconds) === null || seconds < 0 ? '—' : `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 export const lastRoundLabel = (match, language = 'en') => match.finalStage ? `${translate(language, 'stage')} ${match.finalStage}` : match.lastRound != null ? `${translate(language, 'round')} ${match.lastRound}` : translate(language, 'roundUnavailable');
 export function matchDate(match, language = 'en') {
-  if (match.source === 'riot') return Number.isFinite(match.timestamp)
+  if (match.source === 'riot' || match.source === 'local') return Number.isFinite(match.timestamp)
     ? new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(match.timestamp))
     : translate(language, 'dateUnavailable');
   if (language === 'ko') {

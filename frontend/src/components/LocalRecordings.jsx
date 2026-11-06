@@ -62,7 +62,7 @@ export default function LocalRecordings() {
   }
   const previewRoi = preview?.stageTracking?.selectedRoi || options.stageRoi;
   return <section className="panel local-recordings" id="local-recordings">
-    <div className="section-heading"><div><div className="eyebrow">{t('captureLocal')}</div><h2>{t('captureTitle')}</h2></div><span className="team-badge">{t('captureNoApi')}</span></div>
+    <div className="section-heading"><div><div className="eyebrow">{t('captureLocal')}</div><h2>{t('captureTitle')}</h2></div></div>
     <p className="team-notice">{t('captureIntro')}</p>
     {!supported ? <p className="setup-note">{t('capture_desktop_only')}</p> : <>
       <details><summary>{t('captureSettings')}</summary><fieldset disabled={busy || status.recording} className="capture-settings">

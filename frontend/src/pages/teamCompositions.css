@@ -26,4 +26,4 @@
 
 .item-type-tabs{flex-wrap:wrap;margin-bottom:16px}.item-type-tabs button{flex:1;padding:8px 10px;white-space:nowrap}
 
-.builder-unit-image,.roster-portrait{position:relative}.unit-stars{position:absolute;top:0;left:0;right:0;color:#f4d276;background:#101815bb;font-size:10px;line-height:14px;text-align:center;pointer-events:none}.star-controls button{flex:1;color:#f4d276}
+.builder-unit-image,.roster-portrait{position:relative}.builder-unit-image > .unit-stars,.roster-portrait > .unit-stars{position:absolute;top:0;left:0;right:0;color:#f4d276;font-size:10px;line-height:14px;text-align:center;pointer-events:none}.star-controls button{flex:1;color:#f4d276}

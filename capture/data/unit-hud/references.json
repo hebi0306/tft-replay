@@ -1,0 +1,47 @@
+[
+  {
+    "star": 1,
+    "file": "1.png",
+    "itemOffset": [
+      6,
+      16
+    ],
+    "source": "2-7_bench_00.png",
+    "sourceBox": [
+      91,
+      90,
+      106,
+      109
+    ]
+  },
+  {
+    "star": 2,
+    "file": "2.png",
+    "itemOffset": [
+      13,
+      20
+    ],
+    "source": "1-7_board_00.png",
+    "sourceBox": [
+      36,
+      54,
+      59,
+      79
+    ]
+  },
+  {
+    "star": 3,
+    "file": "3.png",
+    "itemOffset": [
+      16,
+      21
+    ],
+    "source": "2-7_board_07.png",
+    "sourceBox": [
+      23,
+      55,
+      49,
+      81
+    ]
+  }
+]
