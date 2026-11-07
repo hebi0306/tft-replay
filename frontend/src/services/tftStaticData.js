@@ -20,7 +20,8 @@ export function indexStaticData(data, version, kind) {
   }
   return index;
 }
-export async function loadTftStaticData(gameVersion) {
+export async function loadTftStaticData(gameVersion, language = 'en') {
+  const locale = language === 'ko' ? 'ko_KR' : 'en_US';
   try {
     versionsPromise ||= json(`${CDN}/api/versions.json`).catch(error => { versionsPromise = undefined; throw error; });
     const versions = await versionsPromise;
@@ -28,9 +29,10 @@ export async function loadTftStaticData(gameVersion) {
     const matched = patch && versions.find(version => version.startsWith(`${patch}.`));
     const version = matched || versions[0];
     if (!version) throw new Error('No Data Dragon version');
-    if (!catalogs.has(version)) catalogs.set(version, Promise.all(['champion', 'item', 'trait'].map(async kind => [kind, indexStaticData(await json(`${CDN}/cdn/${version}/data/en_US/tft-${kind}.json`), version, kind)]))
-      .then(entries => Object.fromEntries(entries)).catch(error => { catalogs.delete(version); throw error; }));
-    return { ...await catalogs.get(version), version, warning: !matched ? '경기 패치의 정적 데이터를 찾지 못해 최신 Data Dragon을 사용했습니다.' : null, warningCode: !matched ? 'staticFallback' : null };
+    const key = `${version}:${locale}`;
+    if (!catalogs.has(key)) catalogs.set(key, Promise.all(['champion', 'item', 'trait'].map(async kind => [kind, indexStaticData(await json(`${CDN}/cdn/${version}/data/${locale}/tft-${kind}.json`), version, kind)]))
+      .then(entries => Object.fromEntries(entries)).catch(error => { catalogs.delete(key); throw error; }));
+    return { ...await catalogs.get(key), version, warning: !matched ? '경기 패치의 정적 데이터를 찾지 못해 최신 Data Dragon을 사용했습니다.' : null, warningCode: !matched ? 'staticFallback' : null };
   } catch {
     return { champion: {}, item: {}, trait: {}, version: null, warning: 'Data Dragon을 불러오지 못했습니다. 경기 정보는 표시하며, 이름/이미지를 찾지 못한 항목은 Unknown으로 표시합니다.', warningCode: 'staticUnavailable' };
   }

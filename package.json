@@ -36,6 +36,7 @@
     "files": [
       "dist/**/*",
       "desktop/**/*",
+      "backend/riotProxy.js",
       "frontend/assets/**/*",
       "package.json"
     ],

@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const { join, resolve } = require('node:path');
 const { pathToFileURL } = require('node:url');
 
+const { detectRiotAccount } = require('./riotClientAccount.cjs');
 const { createCaptureBridge } = require('./captureBridge.cjs');
 let server, capture, quitting = false;
 app.setName('TFT Replay');
@@ -19,8 +20,15 @@ async function createWindow() {
   const origin = `http://127.0.0.1:${server.address().port}`;
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => { if (new URL(url).origin !== origin) event.preventDefault(); });
-  ipcMain.handle('local-replay', async (event, method, args) => {
+  function assertLocalSender(event) {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || new URL(event.senderFrame.url).origin !== origin) throw new Error('Forbidden');
+  }
+  ipcMain.handle('riot-client:account', event => {
+    assertLocalSender(event);
+    return detectRiotAccount();
+  });
+  ipcMain.handle('local-replay', async (event, method, args) => {
+    assertLocalSender(event);
     try { return { result: await capture.request(method, args) }; }
     catch (error) { return { error: error.message }; }
   });

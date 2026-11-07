@@ -22,7 +22,7 @@ export function mapRiotParticipantToFinalComposition(participant, catalog) {
     id: `${unit.character_id || 'unknown'}-${index}`,
     star: Number.isInteger(unit.tier) && unit.tier >= 1 && unit.tier <= 4 ? unit.tier : null,
     // No position property: Riot does not report final-board coordinates.
-    items: (Array.isArray(unit.itemNames) && unit.itemNames.length ? unit.itemNames : Array.isArray(unit.items) ? unit.items : []).map(id => resolveStatic(catalog, 'item', id)),
+    items: (Array.isArray(unit.itemNames) && unit.itemNames.length ? unit.itemNames : Array.isArray(unit.item_names) ? unit.item_names : Array.isArray(unit.items) ? unit.items : []).map(id => resolveStatic(catalog, 'item', id)),
   }));
 }
 export function mapRiotMatchToMatchCard(raw, puuid, catalog) {
@@ -47,7 +47,7 @@ export function mapRiotMatchToMatchCard(raw, puuid, catalog) {
     timestampLabelKey: number(info.gameCreation) !== null ? 'gameCreation' : 'riotMatchTimestamp',
     gameDatetime: number(info.game_datetime), gameVersion: info.game_version || null,
     queueId: number(info.queue_id) ?? number(info.queueId), mode: info.tft_game_type || 'TFT',
-    finalStage: null, finalComposition, traits,
+    finalStage: typeof participant.last_stage === 'string' && /^\d+-\d+$/.test(participant.last_stage) ? participant.last_stage : null, finalComposition, traits,
     theme: traits.filter(trait => trait.active && trait.resolved).slice(0, 2).map(trait => trait.name).join(' · ') || 'Final composition',
     staticVersion: catalog?.version || null,
     staticWarning: [catalog?.warning, unresolved ? '일부 정적 이름/이미지를 찾지 못했습니다. 알 수 없는 항목의 식별자는 내부 데이터에 보존됩니다.' : null].filter(Boolean).join(' '),

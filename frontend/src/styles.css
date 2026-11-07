@@ -18,3 +18,11 @@
 .bench-slot .unit-name{max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .bench-slot .unit-items{max-width:100%;justify-content:center}
 .bench-slot .unit-items > span{min-width:0;overflow:hidden}
+
+.riot-match-card{flex-wrap:wrap}
+.riot-match-card .mini-team{display:flex;flex-wrap:wrap}
+.riot-match-card .mini-team .unit{display:flex;width:48px;height:auto}
+.riot-match-card .mini-team .unit-items{justify-content:center}
+.riot-card-traits{flex-basis:100%}
+.riot-card-traits .trait-list{display:flex;flex-wrap:wrap;padding:8px 0 0;gap:6px}
+@media(max-width:950px){.riot-match-card .mini-team{flex-basis:100%;margin-left:0}}

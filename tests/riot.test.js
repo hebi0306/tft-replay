@@ -122,3 +122,17 @@ test('proxy keeps 401/403/404/429/5xx distinct; 429 respects Retry-After without
   const response = await fetch(`${base}/api/riot/match/KR_123`);
   assert.equal(response.status, 502); assert.equal((await response.json()).error, 'UPSTREAM_NETWORK');
 });
+import { linkRiotRecordings } from '../frontend/src/services/linkRiotRecordings.js';
+
+test('official match links require a unique ID or matching start and finish times', () => {
+  const game = mapRiotMatchToMatchCard(fixture, participant.puuid, catalog);
+  const timeMatch = { id: 'local', started_at: new Date(game.timestamp + 1000).toISOString(),
+    ended_at: new Date(game.timestamp + game.playerFinishSeconds * 1000).toISOString() };
+  const exact = { id: 'exact', game_id: game.id };
+  const linked = records => linkRiotRecordings([game], records)[0].localReplayId;
+  assert.equal(linked([timeMatch, exact]), 'exact');
+  assert.equal(linked([timeMatch]), 'local');
+  assert.equal(linked([timeMatch, { ...timeMatch, id: 'ambiguous' }]), null);
+  assert.equal(linked([{ ...timeMatch, game_id: 'KR_999' }]), null);
+  assert.equal(linked([{ ...timeMatch, ended_at: timeMatch.started_at }]), null);
+});
