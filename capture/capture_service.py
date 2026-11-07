@@ -7,8 +7,8 @@ import threading
 import time
 from analysis import StageTracker, TftImageAnalyzer, crop, normalized_roi
 from repository import MatchRepository
-from capture_config import STAT_CONFIG, STAT_SAMPLES
-from stat_detector import majority_stats
+from capture_config import STAT_CONFIG, STAT_SAMPLES, GOLD_RETRY_SECONDS
+from stat_detector import majority_stats, stable_gold
 from concurrent.futures import ThreadPoolExecutor
 from board_config import STABILIZE_SECONDS, MAX_WAIT_SECONDS
 from repository import now
@@ -56,6 +56,10 @@ class CaptureService:
         self.state = {'recording': False, 'matchId': None, 'stage': None, 'rounds': 0, 'warning': None}
         self.analyzer = None
         self.stage_analyzer = None
+        self.auto_tracker = StageTracker()
+        self.auto_window = None
+        self.auto_suppressed = False
+        self.auto_missing = 0
 
     def status(self):
         with self.lock:
@@ -105,10 +109,58 @@ class CaptureService:
             raise ValueError('window_missing')
         self.prepare()
         match_id = self.repo.start()
+        self.auto_window = options.get('windowId') if options['mode'] == 'window' else None
+        self.auto_missing = 0
+        self.auto_suppressed = False
         self.stop_event.clear()
         self.update(recording=True, matchId=match_id, stage=None, rounds=0, warning=None)
         self.thread = threading.Thread(target=self.record, args=(options, match_id), daemon=True)
         self.thread.start()
+        return self.status()
+
+    def auto_tick(self, options):
+        import mss
+        from window_detector import game_windows, capture_frame, user32
+        if self.status()['recording'] or (self.thread and self.thread.is_alive()):
+            return self.status()
+        windows = game_windows()
+        foreground = str(user32.GetForegroundWindow())
+        window = next((w for w in windows if w['id'] == foreground and not w['minimized']), None)
+        if not windows:
+            self.auto_suppressed = False
+            self.auto_window = None
+            self.auto_tracker = StageTracker()
+        if window is None:
+            self.auto_tracker.observe(None)
+            return self.status()
+        if self.auto_window != window['id']:
+            self.auto_window = window['id']
+            self.auto_tracker = StageTracker()
+            self.auto_missing = 0
+            self.auto_suppressed = False
+        selected = {**options, 'mode': 'window', 'windowId': window['id']}
+        validate_options(selected)
+        self.prepare()
+        try:
+            with mss.mss() as sct:
+                frame = capture_frame(sct, selected)
+            stage = self.analyzer.detect_stage(frame, selected['stageRoi'])
+        except Exception:
+            self.auto_tracker.observe(None)
+            return self.status()
+        self.auto_missing = 0 if stage else self.auto_missing + 1
+        if self.auto_missing >= 36:
+            self.auto_suppressed = False
+        confirmed = self.auto_tracker.observe(stage)
+        if confirmed and self.auto_suppressed and confirmed.startswith('1-') and (self.status()['stage'] or '') >= '2-1':
+            self.auto_suppressed = False
+        if confirmed and not self.auto_suppressed:
+            if self.analyzer.detect_game_end(frame, self.stat_rois(selected)):
+                return self.status()
+            selected['_automatic'] = True
+            result = self.start(selected)
+            self.auto_tracker = StageTracker()
+            return result
         return self.status()
 
     def stat_rois(self, options):
@@ -145,6 +197,7 @@ class CaptureService:
             self.repo.update_analysis(match_id, stage, result, image)
             print(f"[Board Saved] {stage}: {result['status']['board']}", file=sys.stderr, flush=True)
             print('[Unit detections] ' + json.dumps({'stage': stage, **result.get('unitDetections', {})}), file=sys.stderr, flush=True)
+            print('[Champion assist] ' + json.dumps({'stage': stage, **result['status'].get('championAssist', {})}), file=sys.stderr, flush=True)
         except Exception as error:
             print(f'[Board analysis failed] {error}', file=sys.stderr, flush=True)
             self.skip_board(match_id, stage, 'analysis_failed')
@@ -154,6 +207,10 @@ class CaptureService:
         from window_detector import capture_frame
         tracker = StageTracker()
         failed = False
+        missing_since = None
+        end_checks = 0
+        next_end_check = 0
+        restart_tracker = StageTracker()
         pending = None
         pending_board, board_future = None, None
         board_worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix='tft-board')
@@ -161,6 +218,7 @@ class CaptureService:
             nonlocal pending
             if not pending: return
             values = majority_stats(pending['samples'])
+            values['gold'] = stable_gold(pending['goldSamples'])
             try:
                 self.repo.update_stats(match_id, pending['stage'], values)
                 for kind, value in values.items():
@@ -170,6 +228,11 @@ class CaptureService:
                 print(f'[Stats save failed] {error}', file=sys.stderr, flush=True)
                 self.update(warning='stats_save_failed')
             pending = None
+        def stats_ready():
+            return pending and pending['attempts'] >= STAT_SAMPLES and (
+                self.stat_rois(options)['gold'] is None
+                or stable_gold(pending['goldSamples']) is not None
+                or time.monotonic() >= pending['expires'])
         try:
             while not self.stop_event.is_set():
                 started = time.monotonic()
@@ -177,6 +240,25 @@ class CaptureService:
                     with mss.mss() as sct:
                         frame = capture_frame(sct, options)
                     stage = self.analyzer.detect_stage(frame, options['stageRoi'])
+                    if options.get('_automatic'):
+                        current = time.monotonic()
+                        missing_since = (missing_since if missing_since is not None else current) if stage is None else None
+                        if current >= next_end_check:
+                            next_end_check = current + 3
+                            try:
+                                ended = self.analyzer.detect_game_end(frame, self.stat_rois(options))
+                            except Exception:
+                                ended = False
+                            end_checks = end_checks + 1 if ended else 0
+                            if end_checks >= 3:
+                                self.auto_suppressed = True
+                                print('[Recording ended] result screen or zero HP confirmed', file=sys.stderr, flush=True)
+                                break
+                        restarted = restart_tracker.observe(stage if stage and stage.startswith('1-') and tracker.previous and tracker.previous >= '2-1' else None)
+                        if (missing_since is not None and current - missing_since >= 90) or restarted:
+                            self.auto_suppressed = not bool(restarted)
+                            print('[Recording ended] HUD absent or next game detected', file=sys.stderr, flush=True)
+                            break
                     if pending_board and ((stage is not None and stage != pending_board['stage']) or time.monotonic() > pending_board['expires']):
                         self.skip_board(match_id, pending_board['stage'], 'stable_frame_unavailable')
                         pending_board = None
@@ -192,7 +274,8 @@ class CaptureService:
                             failed = True
                             break
                         print(f'[Stage Confirmed] {confirmed}', file=sys.stderr, flush=True)
-                        pending = {'stage': confirmed, 'samples': [], 'attempts': 0}
+                        pending = {'stage': confirmed, 'samples': [], 'goldSamples': [], 'attempts': 0,
+                                   'expires': time.monotonic() + GOLD_RETRY_SECONDS}
                         pending_board = {'stage': confirmed, 'due': time.monotonic() + STABILIZE_SECONDS,
                                          'expires': time.monotonic() + MAX_WAIT_SECONDS}
                         tracker.commit(confirmed)
@@ -200,15 +283,24 @@ class CaptureService:
                     if pending:
                         pending['attempts'] += 1
                         if stage == pending['stage']:
-                            try:
-                                values, details = self.analyzer.analyze_stats(frame, self.stat_rois(options), options.get('debug', False))
-                            except Exception:
-                                values, details = {kind: None for kind in STAT_CONFIG}, {}
-                            pending['samples'].append(values)
-                            if options.get('debug', False):
-                                try: self.save_debug(match_id, pending['stage'], pending['attempts'], frame, details, values)
-                                except Exception as error: print(f'[Debug save failed] {error}', file=sys.stderr, flush=True)
-                        if pending['attempts'] >= STAT_SAMPLES: finish_stats()
+                            if pending['attempts'] <= STAT_SAMPLES:
+                                try:
+                                    values, details = self.analyzer.analyze_stats(frame, self.stat_rois(options), options.get('debug', False))
+                                except Exception:
+                                    values, details = {kind: None for kind in STAT_CONFIG}, {}
+                                pending['samples'].append(values)
+                                if options.get('debug', False):
+                                    try: self.save_debug(match_id, pending['stage'], pending['attempts'], frame, details, values)
+                                    except Exception as error: print(f'[Debug save failed] {error}', file=sys.stderr, flush=True)
+                                gold = values.get('gold')
+                            else:
+                                # Income animations and selection overlays can outlast the initial samples.
+                                try: gold = self.analyzer.detect_gold(frame, self.stat_rois(options)['gold'])
+                                except Exception: gold = None
+                            pending['goldSamples'].append(gold)
+                        else:
+                            pending['goldSamples'].append(None)
+                        if stats_ready(): finish_stats()
                     if pending_board and stage == pending_board['stage'] and time.monotonic() >= pending_board['due']:
                         if board_future is None or board_future.done():
                             board_future = board_worker.submit(self.analyze_board, frame.copy(), match_id, stage, now(), options.get('debug', False))
@@ -219,8 +311,19 @@ class CaptureService:
                     tracker.observe(None)
                     if pending:
                         pending['attempts'] += 1
-                        if pending['attempts'] >= STAT_SAMPLES: finish_stats()
+                        pending['goldSamples'].append(None)
+                        if stats_ready(): finish_stats()
                     code = str(error)
+                    if options.get('_automatic'):
+                        end_checks = 0
+                        restart_tracker.observe(None)
+                        if code == 'window_missing':
+                            print('[Recording ended] game window closed', file=sys.stderr, flush=True)
+                            break
+                        if missing_since is not None and time.monotonic() - missing_since >= 90:
+                            self.auto_suppressed = True
+                            print('[Recording ended] HUD absent before capture became unavailable', file=sys.stderr, flush=True)
+                            break
                     self.update(warning=code if code in ('window_missing', 'window_minimized', 'window_background', 'invalid_region', 'monitor_missing') else 'ocr_retry')
                 self.stop_event.wait(max(0.05, 1.0 - (time.monotonic() - started)))
         except Exception:
@@ -238,6 +341,7 @@ class CaptureService:
             self.update(recording=False)
 
     def stop(self):
+        self.auto_suppressed = True
         self.stop_event.set()
         if self.thread:
             self.thread.join(timeout=15)
@@ -246,6 +350,7 @@ class CaptureService:
         return self.status()
 
     def dispatch(self, method, args):
+        if method == 'auto_tick': return self.auto_tick(args)
         if method == 'config': return {kind: config['roi'] for kind, config in STAT_CONFIG.items()}
         if method == 'status': return self.status()
         if method == 'sources': return self.sources()

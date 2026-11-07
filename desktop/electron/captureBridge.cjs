@@ -3,7 +3,7 @@ const { createInterface } = require('node:readline');
 const { join } = require('node:path');
 const { existsSync } = require('node:fs');
 
-const METHODS = new Set(['config', 'sources', 'preview', 'start', 'stop', 'status', 'list', 'match', 'image']);
+const METHODS = new Set(['auto_tick', 'config', 'sources', 'preview', 'start', 'stop', 'status', 'list', 'match', 'image']);
 
 function createCaptureBridge({ root, resources, dataPath, packaged }) {
   let child, nextId = 0;

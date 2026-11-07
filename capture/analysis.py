@@ -76,6 +76,23 @@ class TftImageAnalyzer:
                     return stage
         return None
 
+    def detect_game_end(self, frame, rois):
+        # Zero HP also ends our recording when the player remains to spectate.
+        try:
+            if self.detect_health(frame, rois['health']) == 0:
+                return True
+        except Exception:
+            pass
+        import cv2
+        # shortcut: localized result layouts need real-screen calibration; keep OCR in the center ROI.
+        region = crop(frame, [.2, .15, .6, .7])
+        region = cv2.resize(region, (600, 420), interpolation=cv2.INTER_AREA)
+        results, _ = self.ocr(region)
+        texts = [re.sub(r'[^a-z가-힣0-9]', '', text.casefold())
+                 for _, text, confidence in results or [] if confidence >= .85]
+        return any(text in ('victory', 'defeat', 'exitnow', 'playagain',
+                            '승리', '패배', '지금나가기', '다시플레이') for text in texts)
+
     def detect_stat(self, frame, kind, roi, debug=None):
         from capture_config import STAT_CONFIG
         from stat_detector import parse_stat, preprocess_stat
@@ -92,6 +109,15 @@ class TftImageAnalyzer:
             text, score = results[0]
             if score >= STAT_CONFIG[kind]['confidence']:
                 value = parse_stat(text, kind)
+        if value is None and kind == 'gold':
+            from stat_detector import gold_digits
+            tight = gold_digits(region)
+            if tight is not None:
+                results, _ = self.ocr(tight, use_det=False, use_cls=False)
+                if debug is not None:
+                    debug['raw'].extend({'text': text, 'confidence': float(score), 'source': 'tight_digits'} for text, score in results or [])
+                if results and len(results) == 1 and results[0][1] >= STAT_CONFIG[kind]['confidence']:
+                    value = parse_stat(results[0][0], kind)
         if debug is not None: debug['parsed'] = value
         return value
 

@@ -27,6 +27,15 @@ def body_colors(image):
     return np.concatenate(parts) / np.sqrt(np.float32(len(parts)))
 
 
+def body_shape(image):
+    resized = cv2.resize(image, (48, 64), interpolation=cv2.INTER_AREA)
+    gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (3, 3), 0)
+    descriptor = cv2.HOGDescriptor((48, 64), (16, 16), (8, 8), (8, 8), 9)
+    value = descriptor.compute(gray).ravel()
+    return value / max(float(np.linalg.norm(value)), 1e-9)
+
+
 class ReferenceMatcher:
     def __init__(self, entries=(), root=None, threshold=MATCH_CONFIDENCE, margin=MATCH_MARGIN, align=False):
         self.threshold, self.margin = threshold, margin
@@ -35,6 +44,8 @@ class ReferenceMatcher:
         self.feature_samples = []
         self.palette_ids = []
         self.palettes = None
+        self.shapes = None
+        shapes = []
         palettes = []
         if root is None:
             return
@@ -57,8 +68,10 @@ class ReferenceMatcher:
                     self.feature_samples.append((entry['id'], features(image)))
                     self.palette_ids.append(entry['id'])
                     palettes.append(body_colors(image))
+                    shapes.append(body_shape(image))
         if palettes:
             self.palettes = np.stack(palettes)
+            self.shapes = np.stack(shapes)
 
     def identify(self, image):
         query = signature(image)
@@ -100,4 +113,19 @@ class ReferenceMatcher:
                     and scores[candidate] >= .50):
                 return {'id': candidate, 'confidence': scores[candidate],
                         'method': 'body-color-distribution', 'paletteScore': palette_score}
+        if self.shapes is not None and len(set(self.palette_ids)) > 1:
+            shape_scores = np.einsum('ij,j->i', self.shapes, body_shape(image))
+            color_scores = np.einsum('ij,j->i', self.palettes, body_colors(image))
+            combined = {}
+            for candidate, shape_score, color_score in zip(self.palette_ids, shape_scores, color_scores):
+                if shape_score >= .75:
+                    score = float(.75 * shape_score + .25 * color_score)
+                    combined[candidate] = max(combined.get(candidate, 0), score)
+            ranking = sorted(combined.items(), key=lambda item: -item[1])
+            if ranking:
+                candidate, score = ranking[0]
+                runner_up = ranking[1][1] if len(ranking) > 1 else 0
+                if score >= .82 and score - runner_up >= .05:
+                    return {'id': candidate, 'confidence': scores.get(candidate, 0.0),
+                            'method': 'body-shape-color', 'shapeScore': score}
         return {'id': None, 'confidence': confidence}

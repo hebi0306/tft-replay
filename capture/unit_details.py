@@ -29,5 +29,6 @@ class UnitDetails:
                 'identityMethod': champion.get('method', 'template-similarity'),
                 'identityInliers': champion.get('inliers'),
                 'identityPaletteScore': champion.get('paletteScore'),
+                'identityShapeScore': champion.get('shapeScore'),
                 'star': int(star['id']) if star['id'] else None, 'starConfidence': star['confidence'],
                 'items': [v['itemId'] for v in items], 'itemDetails': items}

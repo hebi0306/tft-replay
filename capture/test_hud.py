@@ -36,6 +36,17 @@ class HudTests(unittest.TestCase):
                     self.assertEqual(actual, value, (dx,dy,width,kind,detail))
                     self.assertEqual(detail['source'], 'tracked', (dx,dy,width,kind,detail))
 
+    def test_real_zero_gold_is_read_without_inventing_missing_values(self):
+        from stat_detector import gold_digits
+        image = cv2.imdecode(np.fromfile(Path(__file__).parent / 'fixtures' / 'hud-gold-zero.png', dtype=np.uint8), cv2.IMREAD_COLOR)
+        for scale in (.75, 1, 1.5):
+            resized = cv2.resize(image, None, fx=scale, fy=scale)
+            detail = {}
+            self.assertEqual(self.analyzer.detect_stat(resized, 'gold', [0, 0, 1, 1], detail), 0, detail)
+        blank = np.zeros_like(image)
+        self.assertIsNone(gold_digits(blank))
+        self.assertIsNone(self.analyzer.detect_stat(blank, 'gold', [0, 0, 1, 1]))
+
     def test_two_digit_level_is_not_truncated(self):
         im = cv2.imdecode(np.fromfile(Path(__file__).parent / 'fixtures' / 'hud-level10.png', dtype=np.uint8), cv2.IMREAD_COLOR)
         for width, height in [(1280, 720), (1920, 1080), (2560, 1440)]:

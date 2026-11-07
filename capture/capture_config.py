@@ -7,6 +7,7 @@ STAT_CONFIG = {
     'level': {'roi': [0.177, 0.807, 0.015, 0.032], 'range': (1, 10), 'preprocess': 'contrast', 'confidence': 0.75},
 }
 STAT_SAMPLES = 3
+GOLD_RETRY_SECONDS = 45
 
 HEALTH_TRACKING = {
     "search_pixels": (1740, 120, 90, 800),

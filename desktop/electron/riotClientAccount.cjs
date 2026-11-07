@@ -2,6 +2,8 @@ const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const { join } = require('node:path');
 const https = require('node:https');
+const { readFileSync, writeFileSync, renameSync, unlinkSync } = require('node:fs');
+const { randomUUID } = require('node:crypto');
 
 const discover = [
   '[Console]::OutputEncoding = [Text.Encoding]::UTF8',
@@ -73,4 +75,41 @@ async function detectRiotAccount() {
   }
 }
 
-module.exports = { detectRiotAccount, readRiotId };
+function readRememberedAccount(dataPath) {
+  try {
+    return readRiotId({ riotID: JSON.parse(readFileSync(join(dataPath, 'riot-account.json'), 'utf8')) });
+  } catch {
+    return null;
+  }
+}
+
+function rememberRiotAccount(dataPath, value) {
+  const account = readRiotId({ riotID: value });
+  if (!account) return null;
+  const file = join(dataPath, 'riot-account.json');
+  const temporary = file + '.' + randomUUID() + '.tmp';
+  try {
+    // Only the public Riot ID is persisted; never write session credentials or a PUUID.
+    writeFileSync(temporary, JSON.stringify(account), { mode: 0o600 });
+    renameSync(temporary, file);
+  } catch {
+    // A storage failure must not hide the currently detected account.
+  } finally {
+    try { unlinkSync(temporary); } catch { /* Renamed or never created. */ }
+  }
+  return account;
+}
+
+async function getRiotAccount(dataPath) {
+  const account = await detectRiotAccount();
+  if (account) {
+    const previous = readRememberedAccount(dataPath);
+    if (account.gameName !== previous?.gameName || account.tagLine !== previous?.tagLine) {
+      rememberRiotAccount(dataPath, account);
+    }
+    return account;
+  }
+  return readRememberedAccount(dataPath);
+}
+
+module.exports = { detectRiotAccount, readRiotId, getRiotAccount, readRememberedAccount, rememberRiotAccount };

@@ -1,26 +1,19 @@
+import { savedOptions, stagePresets } from '../services/captureOptions.js';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageProvider.jsx';
 import { localReplay } from '../services/localReplay.js';
 import './localReplay.css';
 
-const stagePresets = { standard: [0.428, 0.002, 0.025, 0.028], extended: [0.365, 0.006, 0.028, 0.029] };
-const defaults = { mode: 'window', windowId: '', monitor: 1, region: [0, 0, 1, 1], stageRoi: stagePresets.standard, debug: false };
-function savedOptions() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('tft-capture-options'));
-    // Update only the former default; preserve user-calibrated regions.
-    if (JSON.stringify(saved?.stageRoi) === '[0.365,0.006,0.034,0.04]') saved.stageRoi = stagePresets.extended;
-    if (saved && ['window', 'region'].includes(saved.mode) && [saved.region, saved.stageRoi].every(a => Array.isArray(a) && a.length === 4 && a.every(Number.isFinite))) return { ...defaults, ...saved, windowId: '', statRois: Object.fromEntries(Object.entries(saved.statRois || {}).filter(([key, roi]) => ['health', 'gold', 'level'].includes(key) && (roi === null || (key === 'health' && roi === 'auto') || (Array.isArray(roi) && roi.length === 4 && roi.every(Number.isFinite))))) };
-  } catch { /* Calibration is optional; corrupt settings use defaults. */ }
-  return defaults;
-}
 export default function LocalRecordings() {
   const { t, language } = useLanguage();
   const [options, setOptions] = useState(savedOptions), [sources, setSources] = useState({ windows: [], monitors: [] });
   const [rows, setRows] = useState([]), [status, setStatus] = useState({ recording: false });
   const [error, setError] = useState(''), [busy, setBusy] = useState(false), [preview, setPreview] = useState(null);
   const supported = Boolean(window.localReplay);
+  useEffect(() => {
+    try { localStorage.setItem('tft-capture-options', JSON.stringify(options)); } catch { /* Calibration storage is optional. */ }
+  }, [options]);
   useEffect(() => {
     if (!supported) return;
     let active = true, timer;
@@ -48,9 +41,8 @@ export default function LocalRecordings() {
         await new Promise(resolve => setTimeout(resolve, 5000));
         setPreview(await localReplay('preview', options));
       } else {
-        const next = await localReplay(method, method === 'start' ? options : {});
+        const next = await localReplay('stop');
         setStatus(next); setRows(await localReplay('list'));
-        if (method === 'start') try { localStorage.setItem('tft-capture-options', JSON.stringify(options)); } catch { /* Recording does not require browser storage. */ }
       }
     } catch (error) { setError(error.message); }
     finally { setBusy(false); }
@@ -63,7 +55,7 @@ export default function LocalRecordings() {
   const previewRoi = preview?.stageTracking?.selectedRoi || options.stageRoi;
   return <section className="panel local-recordings" id="local-recordings">
     <div className="section-heading"><div><div className="eyebrow">{t('captureLocal')}</div><h2>{t('captureTitle')}</h2></div></div>
-    <p className="team-notice">{t('captureIntro')}</p>
+    <p className="team-notice">{t('captureAutoIntro')}</p>
     {!supported ? <p className="setup-note">{t('capture_desktop_only')}</p> : <>
       <details><summary>{t('captureSettings')}</summary><fieldset disabled={busy || status.recording} className="capture-settings">
         <label>{t('captureMode')}<select value={options.mode} onChange={e => setOptions({ ...options, mode: e.target.value })}><option value="window">{t('captureWindow')}</option><option value="region">{t('captureRegion')}</option></select></label>
@@ -78,7 +70,7 @@ export default function LocalRecordings() {
         <p className="team-notice">{t('capturePreviewHint')}</p>
       </fieldset></details>
       {preview && <div className="capture-preview"><div className="capture-preview-frame"><img src={preview.image} alt={t('capturePreviewAlt')} /><span style={{ left: `${previewRoi[0] * 100}%`, top: `${previewRoi[1] * 100}%`, width: `${previewRoi[2] * 100}%`, height: `${previewRoi[3] * 100}%` }} /></div><img className="capture-roi-image" src={preview.roiImage} alt={t('captureStageRoi')} /><p>{t('captureDetected')}: {preview.stage || t('ocr_retry')}</p><div className="capture-stat-grid">{['health', 'gold', 'level'].map(kind => <div key={kind}><b>{t('captureStat_' + kind)}</b><p>{preview.stats?.[kind] ?? '—'}</p>{preview.debug?.[kind] && <><small>{JSON.stringify({ raw: preview.debug[kind].raw, parsed: preview.debug[kind].parsed, error: preview.debug[kind].error, trackedRoi: preview.debug[kind].trackedRoi })}</small>{['roi', 'processed'].map(name => preview.debug[kind][name] && <figure key={name}><figcaption>{t('captureDebug_' + name)}</figcaption><img src={preview.debug[kind][name]} alt={t('captureStat_' + kind) + ' ' + t('captureDebug_' + name)} /></figure>)}</>}</div>)}</div><p className="team-notice">{t('capturePreviewStatsHint')}</p></div>}
-      <div className="capture-actions"><button className="button primary" disabled={busy || (!status.recording && options.mode === 'window' && !options.windowId)} onClick={() => action(status.recording ? 'stop' : 'start')}>{t(status.recording ? 'captureStop' : 'captureStart')}</button><span role="status">{busy ? t('captureWorking') : status.recording ? t('captureRunning', { stage: status.stage || '—', count: status.rounds }) : t('captureIdle')}</span></div>
+      <div className="capture-actions">{status.recording && <button className="button primary" disabled={busy} onClick={() => action('stop')}>{t('captureStop')}</button>}<span role="status">{busy ? t('captureWorking') : status.recording ? t('captureRunning', { stage: status.stage || '—', count: status.rounds }) : t('captureAutoReady')}</span></div>
       {status.warning && <p className="setup-note" role="status">{t(status.warning)}</p>}
       {error && <p className="error-message" role="alert">{t(error)}</p>}
     </>}

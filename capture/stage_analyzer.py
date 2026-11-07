@@ -8,6 +8,7 @@ from board_config import BOARD_ROI, BENCH_ROI, DATA_DIR, MODEL_PATH, STAR_ROI, I
 from board_geometry import extract_board_region, extract_bench_region, hex_grid, nearest_hex, bench_slots, box_crop
 from unit_detector import UnitDetector
 from unit_details import UnitDetails
+from champion_assist import ChampionAssist
 from unit_hud import UnitHud
 from tft_catalog import TftCatalog
 from trait_calculator import calculate_traits
@@ -19,6 +20,7 @@ class TftStageAnalyzer:
         self.detector = UnitDetector(model_path)
         self.details = UnitDetails(self.catalog)
         self.hud = UnitHud(self.catalog)
+        self.champion_assist = ChampionAssist(self.catalog, Path(model_path).parent / 'champion-identity.onnx')
 
     def analyze(self, frame, stage=None, debug_dir=None):
         directory = Path(debug_dir) if debug_dir is not None else None
@@ -126,6 +128,7 @@ class TftStageAnalyzer:
                 detail['championId'], detail['confidence'] = None, 0.0
                 detail['identityMethod'], detail['identityInliers'] = None, None
                 detail['identityPaletteScore'] = None
+                detail['identityShapeScore'] = None
             if detected is not None:
                 occupancy = 'unit'
             elif empty['id'] == 'empty' and detail['championId'] is None:
@@ -150,6 +153,8 @@ class TftStageAnalyzer:
             unassigned.append({**detail, 'bbox': unit['box'], 'row': None, 'col': None,
                                'detectionConfidence': unit['confidence'],
                                'position': {'method': unit['reason'], 'verified': False}})
+        # Unassigned bodies do not have a reliable board/bench target for context classification.
+        status['championAssist'] = self.champion_assist.apply(frame, board + [unit for unit in bench if unit['occupancy'] == 'unit'])
         hud_observations = []
         try:
             hud_units = deepcopy(board + bench + unassigned)
@@ -175,7 +180,7 @@ class TftStageAnalyzer:
                   'unassignedUnits': unassigned, 'hudObservations': hud_observations,
                   'status': status, 'traitsComplete': complete,
                   'catalogVersion': self.catalog.data.get('version'), 'set': self.catalog.data.get('currentSet'),
-                  'method': 'unit-onnx+template-similarity', 'rejectedPositions': rejected,
+                  'method': 'unit-onnx+template-similarity' + ('+copilot-identity' if status['championAssist']['accepted'] else ''), 'rejectedPositions': rejected,
                   'unitDetections': {'board': detections, 'bench': bench_detections, 'coordinates': 'roi_pixels',
                                      'boardRoi': BOARD_ROI, 'benchRoi': BENCH_ROI},
                   'userCorrections': None}

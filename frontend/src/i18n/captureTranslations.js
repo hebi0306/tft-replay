@@ -1,5 +1,8 @@
 export const captureTranslations = {
   en: {
+    captureAutoIntro: 'Recording starts automatically after the game round label is detected three times. Keep TFT Replay running and bring the game to the foreground. Saved calibration is reused.',
+    captureAutoReady: 'Waiting for a TFT game · automatic recording',
+
     captureBoardAnalysis: "Board analysis details",
     captureBoardAnalysisNote: "Experimental detected data. Empty arrays do not mean an empty board when the model is unavailable. Unknown units and items are null; traits may be partial. Positions are estimates from the visible body, not confirmed pre-combat placements. A stabilized frame is analyzed separately from the original screenshot.",
     captureBoardStatus_model_missing: "Unit detection model is not installed.",
@@ -27,7 +30,7 @@ export const captureTranslations = {
     captureStageRoi: 'Round number area', captureRoiHint: 'Presets automatically locate the round icon, with these coordinates as fallback. Editing coordinates uses your manual area. The preview rectangle shows the area actually read.',
     captureAxis_X: 'Left', captureAxis_Y: 'Top', captureAxis_W: 'Width', captureAxis_H: 'Height',
     capturePreview: 'Test capture in 5 seconds', capturePreviewHint: 'Click, switch to the game within 5 seconds, then return to inspect the image and OCR result. Test images are not saved.', capturePreviewAlt: 'Test game capture with round ROI', captureDetected: 'Detected round',
-    captureStart: 'Start game recording', captureStop: 'Stop recording', captureWorking: 'Working… for a test capture, switch to TFT now.', captureIdle: 'Not recording', captureRunning: 'Recording · Round {stage} · {count} saved',
+    captureStop: 'Stop recording', captureWorking: 'Working… for a test capture, switch to TFT now.', captureIdle: 'Not recording', captureRunning: 'Recording · Round {stage} · {count} saved',
     captureRecent: 'Recent local replays', captureRoundCount: '{count} rounds', capture_completed: 'Completed', capture_interrupted: 'Interrupted (saved rounds retained)', captureView: 'View replay', captureEmpty: 'Completed local recordings will appear here.',
     captureReplay: 'Game screenshot replay', captureRealNotice: 'Actual locally captured screens. OCR labels may be imperfect. HP, gold and level are OCR estimates. This is separate from Riot match results and MOCK replay; champions and items are not recognized.',
     captureNotFinished: 'Stop recording before opening this replay.', captureLoading: 'Loading local recording…', captureNoRounds: 'No round was confirmed. Check the game window and calibrate the round area with a test capture.', captureImageAlt: 'Captured TFT screen for round {stage}', capturePrevious: 'Previous round', captureNext: 'Next round',
@@ -40,6 +43,9 @@ export const captureTranslations = {
     already_recording: 'A recording is already running.', stop_pending: 'Recording is still stopping. Wait and check its status.', image_failed: 'Could not encode this screenshot.', match_missing: 'Local recording not found.', image_missing: 'Saved screenshot not found.', invalid_stage: 'Invalid round label.', invalid_command: 'Unsupported capture command.', service_failed: 'Capture service failed. Check capture dependencies and the desktop terminal log.',
   },
   ko: {
+    captureAutoIntro: 'TFT Replay를 실행해 두면 실제 경기의 라운드 표시를 3회 확인한 뒤 자동 기록합니다. 게임 창이 앞에 표시되어 있어야 하며 기존 보정 설정을 사용합니다.',
+    captureAutoReady: 'TFT 경기 대기 중 · 자동 기록',
+
     captureBoardAnalysis: "보드 분석 상세",
     captureBoardAnalysisNote: "실험적인 인식 결과입니다. 모델이 없을 때 빈 배열은 빈 보드를 뜻하지 않습니다. 모르는 챔피언·아이템은 null이며 특성은 일부만 계산될 수 있습니다. 위치는 보이는 몸체로 추정한 값이며 전투 전 확정 배치가 아닙니다. 기존 스크린샷과 별도로 안정화된 프레임을 분석합니다.",
     captureBoardStatus_model_missing: "챔피언 위치 탐지 모델이 설치되지 않았습니다.",
@@ -67,7 +73,7 @@ export const captureTranslations = {
     captureStageRoi: '라운드 숫자 영역', captureRoiHint: '프리셋은 라운드 아이콘을 자동 탐지하고 실패 시 아래 좌표를 사용합니다. 좌표를 직접 바꾸면 수동 영역을 우선합니다. 미리보기 사각형은 실제로 읽은 영역입니다.',
     captureAxis_X: '왼쪽', captureAxis_Y: '위쪽', captureAxis_W: '너비', captureAxis_H: '높이',
     capturePreview: '5초 후 테스트 캡처', capturePreviewHint: '클릭 후 5초 안에 게임으로 전환한 뒤 돌아와 이미지와 OCR 결과를 확인하세요. 테스트 이미지는 저장하지 않습니다.', capturePreviewAlt: '라운드 영역이 표시된 테스트 캡처', captureDetected: '감지된 라운드',
-    captureStart: '게임 기록 시작', captureStop: '기록 종료', captureWorking: '처리 중… 테스트 캡처라면 지금 TFT로 전환하세요.', captureIdle: '기록 대기', captureRunning: '기록 중 · 라운드 {stage} · {count}장 저장',
+    captureStop: '기록 종료', captureWorking: '처리 중… 테스트 캡처라면 지금 TFT로 전환하세요.', captureIdle: '기록 대기', captureRunning: '기록 중 · 라운드 {stage} · {count}장 저장',
     captureRecent: '최근 로컬 복기', captureRoundCount: '라운드 기록 {count}개', capture_completed: '기록 완료', capture_interrupted: '중단됨 (저장된 라운드 보존)', captureView: '복기 보기', captureEmpty: '기록을 종료한 게임이 여기에 표시됩니다.',
     captureReplay: '게임 화면 복기', captureRealNotice: '직접 캡처한 실제 게임 화면입니다. OCR 라운드 표시는 오인식될 수 있습니다. HP·골드·레벨은 OCR 추정값입니다. Riot 경기 결과 및 MOCK 복기와 별개이며 챔피언·아이템 자동 인식은 제공하지 않습니다.',
     captureNotFinished: '기록을 종료한 후 복기를 열어 주세요.', captureLoading: '로컬 기록을 불러오는 중…', captureNoRounds: '확정된 라운드가 없습니다. 게임 창과 라운드 영역을 테스트 캡처로 확인하세요.', captureImageAlt: '{stage} 라운드의 TFT 캡처 화면', capturePrevious: '이전 라운드', captureNext: '다음 라운드',
