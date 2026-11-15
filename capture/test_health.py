@@ -67,7 +67,7 @@ class HealthTests(unittest.TestCase):
                 except StopIteration:
                     service.stop_event.set()
                     raise ValueError('window_missing')
-            with patch('window_detector.capture_frame', side_effect=next_frame), patch.object(service.stop_event, 'wait', return_value=False):
+            with patch('window_detector.capture_frame', side_effect=next_frame), patch.object(service.stop_event, 'wait', return_value=False), patch('capture_service.combat_phase', side_effect=[('planning', 1), ('combat', None)] * 2), patch.object(service, 'analyze_board'):
                 result = service.start({'mode': 'region', 'monitor': 1, 'region': [0, 0, 1, 1],
                     'stageRoi': [800/1920, 15/1080, 100/1920, 50/1080],
                     'statRois': {'health': 'auto', 'gold': [800/1920, 115/1080, 100/1920, 50/1080],

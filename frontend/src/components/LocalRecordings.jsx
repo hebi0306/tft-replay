@@ -1,3 +1,4 @@
+import { appStorage } from '../services/appStorage.js';
 import { savedOptions, stagePresets } from '../services/captureOptions.js';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -12,7 +13,7 @@ export default function LocalRecordings() {
   const [error, setError] = useState(''), [busy, setBusy] = useState(false), [preview, setPreview] = useState(null);
   const supported = Boolean(window.localReplay);
   useEffect(() => {
-    try { localStorage.setItem('tft-capture-options', JSON.stringify(options)); } catch { /* Calibration storage is optional. */ }
+    try { appStorage.setItem('tft-capture-options', JSON.stringify(options)); } catch { /* Calibration storage is optional. */ }
   }, [options]);
   useEffect(() => {
     if (!supported) return;

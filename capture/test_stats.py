@@ -22,14 +22,14 @@ class StatTests(unittest.TestCase):
             data = json.loads((directory / '3-2_1.json').read_text(encoding='utf-8'))
             self.assertEqual(data['details']['health']['raw'][0]['text'], '74')
 
-    def test_recording_votes_only_same_stage_and_preserves_screenshot_on_failure(self):
+    def test_recording_reads_each_precombat_frame_and_preserves_screenshot_on_failure(self):
         from unittest.mock import patch
         import numpy as np
         from capture_service import CaptureService
         with tempfile.TemporaryDirectory() as root:
             service = CaptureService(root)
             frame = np.zeros((100, 200, 3), dtype=np.uint8)
-            stages = iter(['3-1'] * 5 + ['3-2'] * 3)
+            stages = iter(['3-1'] * 5 + ['3-2'] * 4)
             class Analyzer:
                 def __init__(self): self.index = 0
                 def detect_stage(self, *_):
@@ -39,10 +39,10 @@ class StatTests(unittest.TestCase):
                         return None
                 def analyze_stats(self, *_):
                     self.index += 1
-                    if self.index == 4: raise RuntimeError('temporary OCR failure')
-                    return {'health': 74 if self.index < 3 else 71, 'gold': 0, 'level': 7}, {}
+                    if self.index == 2: raise RuntimeError('temporary OCR failure')
+                    return {'health': 74, 'gold': 0, 'level': 7}, {}
             service.analyzer = Analyzer()
-            with patch('window_detector.capture_frame', return_value=frame), patch.object(service.stop_event, 'wait', return_value=False):
+            with patch('window_detector.capture_frame', return_value=frame), patch.object(service.stop_event, 'wait', return_value=False), patch('capture_service.combat_phase', side_effect=[('planning', 1), ('combat', None)] * 2), patch.object(service, 'analyze_board'):
                 result = service.start({'mode': 'region', 'monitor': 1, 'region': [0, 0, 1, 1], 'stageRoi': [0.4, 0, 0.1, 0.05]})
                 service.thread.join(timeout=5)
             rounds = service.repo.match(result['matchId'])['rounds']

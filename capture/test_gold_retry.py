@@ -1,55 +1,51 @@
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
+import cv2
 import numpy as np
 from capture_service import CaptureService
 from stat_detector import stable_gold
 
 
-class GoldRetryTests(unittest.TestCase):
-    def capture(self, stages, initial, retries, timeout=45):
+class PrecombatCaptureTests(unittest.TestCase):
+    def test_replay_keeps_latest_precombat_frame_and_skips_noncombat(self):
         with tempfile.TemporaryDirectory() as root:
-            service=CaptureService(root)
-            service.analyzer=Mock()
-            values=iter(stages);clock=[0]
-            def stage(*_):
-                clock[0]+=1
-                try:return next(values)
-                except StopIteration:
+            service = CaptureService(root)
+            service.analyzer = Mock()
+            # Carousel, augment modal, two clean planning frames, combat, and unfinished planning.
+            timeline = [
+                *([('2-4', (None, None))] * 4),
+                *([('2-5', (None, None))] * 3),
+                ('2-5', ('planning', 2)), ('2-5', ('planning', 1)),
+                ('2-5', ('combat', None)), ('2-5', ('combat', None)),
+                *([('2-6', ('planning', 1))] * 3),
+            ]
+            index = [-1]
+            def grab(*_):
+                index[0] += 1
+                if index[0] == len(timeline):
                     service.stop_event.set()
-                    return None
-            service.analyzer.detect_stage.side_effect=stage
-            service.analyzer.analyze_stats.side_effect=[({'health':74,'gold':gold,'level':7},{})for gold in initial]
-            service.analyzer.detect_gold.side_effect=retries
-            match=service.repo.start()
-            service.update(recording=True,matchId=match)
-            with patch('window_detector.capture_frame',return_value=np.zeros((100,200,3),np.uint8)),patch('capture_service.time.monotonic',side_effect=lambda:clock[0]),patch('capture_service.GOLD_RETRY_SECONDS',timeout),patch.object(service.stop_event,'wait'),patch.object(service,'analyze_board'):
-                service.record({'stageRoi':[.4,0,.1,.05]},match)
-            return service.repo.match(match)['rounds'],service.analyzer
-
-    def test_income_animation_retries_gold_without_repeating_health_and_level(self):
-        rounds,analyzer=self.capture(['3-1']*10,[1,3,7],[12,15,15])
-        self.assertEqual((rounds[0]['health'],rounds[0]['gold'],rounds[0]['level']),(74,15,7))
-        self.assertEqual(analyzer.analyze_stats.call_count,3)
-        self.assertEqual(analyzer.detect_gold.call_count,3)
-
-    def test_selection_overlay_can_clear_later_and_zero_is_valid(self):
-        rounds,analyzer=self.capture(['3-1']*12,[None,None,None],[None,None,0,0])
-        self.assertEqual(rounds[0]['gold'],0)
-        self.assertEqual(analyzer.detect_gold.call_count,4)
-
-    def test_retry_timeout_keeps_gold_unknown(self):
-        rounds,analyzer=self.capture(['3-1']*15,[None,None,None],[None]*20,timeout=5)
-        self.assertIsNone(rounds[0]['gold'])
-        self.assertEqual((rounds[0]['health'],rounds[0]['level']),(74,7))
-        self.assertEqual(analyzer.analyze_stats.call_count,3)
-        self.assertLess(analyzer.detect_gold.call_count,10)
-
-    def test_next_round_gold_does_not_leak_into_previous_round(self):
-        rounds,_=self.capture(['3-1']*5+['3-2']*6,[1,2,3,20,20,20],[])
-        self.assertEqual([r['stage']for r in rounds],['3-1','3-2'])
-        self.assertIsNone(rounds[0]['gold'])
-        self.assertEqual(rounds[1]['gold'],20)
+                    raise ValueError('window_missing')
+                return np.full((100, 200, 3), index[0], np.uint8)
+            def phase(*_):
+                return timeline[index[0]][1]
+            def stats(frame, *_):
+                self.assertEqual(int(frame[0, 0, 0]), 8)
+                return {'health': 74, 'gold': 0, 'level': 7}, {}
+            service.analyzer.detect_stage.side_effect = lambda *_: timeline[index[0]][0]
+            service.analyzer.analyze_stats.side_effect = stats
+            match = service.repo.start()
+            service.update(recording=True, matchId=match)
+            with patch('window_detector.capture_frame', side_effect=grab), patch('capture_service.combat_phase', side_effect=phase), patch.object(service.stop_event, 'wait'), patch.object(service, 'analyze_board') as board:
+                service.record({'stageRoi': [.4, 0, .1, .05]}, match)
+            rows = service.repo.match(match)['rounds']
+            self.assertEqual([r['stage'] for r in rows], ['2-5'])
+            self.assertEqual((rows[0]['health'], rows[0]['gold'], rows[0]['level']), (74, 0, 7))
+            saved = cv2.imdecode(np.frombuffer((service.repo.root / match / '2-5.png').read_bytes(), np.uint8), 1)
+            self.assertTrue(np.all(saved == 8))
+            board.assert_called_once()
+            self.assertEqual(board.call_args.args[-1], 'precombat')
+            self.assertTrue(np.array_equal(board.call_args.args[0], saved))
 
     def test_only_recent_consecutive_values_establish_stability(self):
         self.assertIsNone(stable_gold([0,0,3]))

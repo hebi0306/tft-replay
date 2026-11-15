@@ -12,9 +12,10 @@ class AutomaticCaptureTests(unittest.TestCase):
             service.analyzer.detect_stage.return_value = '1-1'
             windows = [{'id': '123', 'minimized': False}]
             options = {'mode': 'window', 'windowId': '', 'stageRoi': [.428,.002,.025,.028]}
-            def start(selected):
+            def start(selected, opening):
                 self.assertTrue(selected['_automatic'])
                 self.assertEqual(selected['windowId'], '123')
+                self.assertEqual(opening[0], '1-1')
                 service.update(recording=True)
                 return service.status()
             with patch('window_detector.game_windows', return_value=windows),                  patch('window_detector.user32.GetForegroundWindow', return_value=123),                  patch('window_detector.capture_frame', return_value=object()),                  patch.object(service, 'start', side_effect=start) as begin:
@@ -24,6 +25,25 @@ class AutomaticCaptureTests(unittest.TestCase):
                 service.auto_tick(options)
                 service.auto_tick(options)
                 self.assertEqual(begin.call_count, 1)
+
+    def test_opening_combat_saves_preparation_seen_before_record_thread(self):
+        import numpy as np
+        with tempfile.TemporaryDirectory() as root:
+            service = CaptureService(root)
+            service.analyzer = Mock()
+            service.analyzer.detect_game_end.return_value = False
+            service.analyzer.analyze_stats.return_value = ({'health':100, 'gold':0, 'level':1}, {})
+            prep = np.full((100, 200, 3), 123, np.uint8)
+            combat = np.zeros_like(prep)
+            mid = service.repo.start()
+            seed = ('1-1', combat, 2, ('combat', None), (prep, '2026-11-15T04:00:00+00:00', 1, 'planning', 1))
+            with patch('window_detector.capture_frame', side_effect=ValueError('window_missing')), patch.object(service.stop_event, 'wait'), patch.object(service, 'analyze_board') as board:
+                service.record({'_automatic':True, 'stageRoi':[.4, 0, .1, .05]}, mid, seed)
+            rows = service.repo.match(mid)['rounds']
+            self.assertEqual([r['stage'] for r in rows], ['1-1'])
+            self.assertEqual(rows[0]['captured_at'], '2026-11-15T04:00:00+00:00')
+            self.assertTrue(np.array_equal(board.call_args.args[0], prep))
+            service.analyzer.detect_stage.assert_not_called()
 
     def test_manual_stop_prevents_immediate_automatic_restart(self):
         with tempfile.TemporaryDirectory() as root:
@@ -62,7 +82,7 @@ class AutomaticCaptureTests(unittest.TestCase):
                 return frame
             match_id = service.repo.start()
             service.update(recording=True, matchId=match_id)
-            with patch('window_detector.capture_frame', side_effect=grab), patch('capture_service.time.monotonic', side_effect=lambda: clock[0]), patch.object(service.stop_event, 'wait'), patch.object(service, 'analyze_board'):
+            with patch('window_detector.capture_frame', side_effect=grab), patch('capture_service.time.monotonic', side_effect=lambda: clock[0]), patch.object(service.stop_event, 'wait'), patch.object(service, 'analyze_board'), patch('capture_service.combat_phase', side_effect=[('planning', 1), ('combat', None), ('combat', None)]):
                 service.record({'_automatic': True, 'stageRoi': [.4, 0, .1, .05]}, match_id)
             self.assertEqual(clock[0], 18)
             self.assertFalse(service.status()['recording'])
@@ -70,7 +90,7 @@ class AutomaticCaptureTests(unittest.TestCase):
             match = service.repo.match(match_id)
             self.assertEqual(match['status'], 'completed')
             self.assertIsNotNone(match['ended_at'])
-            self.assertEqual([r['stage'] for r in match['rounds']], ['3-2'])
+            self.assertEqual(match['rounds'], [])
 
     def test_background_switch_does_not_end_game_but_closed_window_does(self):
         with tempfile.TemporaryDirectory() as root:
@@ -120,28 +140,35 @@ class AutomaticCaptureTests(unittest.TestCase):
         analyzer.detect_health.return_value = 0
         self.assertTrue(analyzer.detect_game_end(frame, {'health': 'auto'}))
 
-    def test_lost_hud_timeout_survives_background_capture_errors(self):
+    def test_long_missing_hud_and_alt_tab_resume_the_same_recording(self):
         import numpy as np
         with tempfile.TemporaryDirectory() as root:
             service = CaptureService(root)
             service.analyzer = Mock()
-            service.analyzer.detect_stage.return_value = None
             service.analyzer.detect_game_end.return_value = False
-            clock = [0]
+            service.analyzer.analyze_stats.return_value = ({'health':30, 'gold':20, 'level':6}, {})
             frame = np.zeros((100, 200, 3), dtype=np.uint8)
+            timeline = iter([
+                (1, '3-7'), (2, '3-7'), (3, '3-7'), (4, '3-7'),
+                (30, None), (70, None), (121, None), (151, 'window_background'),
+                (152, '4-1'), (153, '4-1'), (154, '4-1'), (155, '4-1'),
+                (156, 'window_missing'),
+            ])
+            clock = [0]
             def grab(*_):
-                clock[0] += 30
-                if clock[0] > 150:
-                    self.fail('Lost HUD did not time out')
-                if clock[0] > 30:
-                    raise ValueError('window_background')
+                clock[0], reading = next(timeline)
+                if reading and reading.startswith('window_'):
+                    raise ValueError(reading)
+                service.analyzer.detect_stage.return_value = reading
                 return frame
             match_id = service.repo.start()
-            with patch('window_detector.capture_frame', side_effect=grab), patch('capture_service.time.monotonic', side_effect=lambda: clock[0]), patch.object(service.stop_event, 'wait'):
+            with patch('window_detector.capture_frame', side_effect=grab), patch('capture_service.time.monotonic', side_effect=lambda: clock[0]), patch.object(service.stop_event, 'wait'), patch.object(service, 'analyze_board'), patch('capture_service.combat_phase', side_effect=[('planning', 1), ('combat', None)] * 2):
                 service.record({'_automatic': True, 'stageRoi': [.4, 0, .1, .05]}, match_id)
-            self.assertEqual(clock[0], 120)
-            self.assertTrue(service.auto_suppressed)
-            self.assertIsNotNone(service.repo.match(match_id)['ended_at'])
+            self.assertEqual(clock[0], 156)
+            self.assertFalse(service.auto_suppressed)
+            match = service.repo.match(match_id)
+            self.assertEqual([row['stage'] for row in match['rounds']], ['3-7', '4-1'])
+            self.assertEqual(match['status'], 'completed')
 
     def test_single_false_end_reading_does_not_stop_recording(self):
         import numpy as np

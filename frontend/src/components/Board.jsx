@@ -4,10 +4,10 @@ const colors = ['#98adbf', '#ab95dd', '#caac71', '#78b7ae', '#bd83ab'];
 export function BoardUnit({ unit, compact = false }) {
   const { t } = useLanguage();
   const color = colors[unit.name.charCodeAt(0) % colors.length];
-  const items = (unit.items || []).map(item => typeof item === 'string' ? { name: item } : item);
+  const items = (unit.items || []).filter(item => item && !item.unknown).map(item => typeof item === 'string' ? { name: item } : item);
   return <div className={`unit ${compact ? 'compact' : ''}`} style={{ '--unit-color': color }} title={`${unit.name} · ${unit.star ? t('stars', { count: unit.star }) : t('unknown')}${items.length ? ` · ${items.map(item => item.name).join(', ')}` : ` · ${t('noItems')}`}`}>
     <span className={unit.star ? 'unit-stars' : 'unit-stars is-unknown'}>{unit.star ? '★'.repeat(unit.star) : '☆'}</span><span className="unit-sigil"><AssetIcon src={unit.image} name={unit.name} fallback={unit.unknown ? '?' : unit.name.slice(0, 2).toUpperCase()} /></span><span className="unit-name">{unit.name}</span>
-    {!compact && <span className="unit-items">{items.map((item, index) => <span key={index} title={item.name} aria-label={item.name}><AssetIcon src={item.image} name={item.name} fallback={item.unknown ? '?' : item.name.split(' ').map(word => word[0]).join('')} /></span>)}</span>}
+    {!compact && items.length > 0 && <span className="unit-items">{items.map((item, index) => <span key={index} title={item.name} aria-label={item.name}><AssetIcon src={item.image} name={item.name} fallback={item.name.split(' ').map(word => word[0]).join('')} /></span>)}</span>}
   </div>;
 }
 export function FinalComposition({ units }) {

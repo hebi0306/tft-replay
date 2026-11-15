@@ -12,8 +12,8 @@ def extract_bench_region(frame):
 
 
 def hex_grid():
-    return [{'row': row, 'col': col, 'centerX': x + col * step, 'centerY': y}
-            for row, (x, y, step) in enumerate(HEX_ROWS) for col in range(7)]
+    return [{'row': row, 'col': col, 'centerX': x / 1920, 'centerY': y / 1080}
+            for row, (y, columns) in enumerate(HEX_ROWS) for col, x in enumerate(columns)]
 
 
 def nearest_hex(x, y, max_distance=HEX_MAX_DISTANCE):

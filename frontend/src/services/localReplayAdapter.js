@@ -1,8 +1,15 @@
+import captureCatalog from '../../../capture/data/catalog.json' with { type: 'json' };
+
+const savedAssets = Object.fromEntries(
+ Object.entries({champion:captureCatalog.champions,item:captureCatalog.items,trait:captureCatalog.traits}).map(([kind, entries]) =>
+  [kind,new Map(entries.flatMap(v => [v.id,v.apiId].filter(Boolean).map(id => [id.toLowerCase(),v])))])
+);
+
 const list = value => Array.isArray(value) ? value.filter(v => v && typeof v === 'object') : [];
 const number = value => Number.isFinite(value) ? value : null;
 export function adaptLocalRound(record, catalog, t) {
  const a=record.analysis || {};
- const asset=(kind,id)=>{const v=id && catalog?.[kind]?.[String(id).toLowerCase()];return {name:v?.name || t('unknown'),image:v?.image || null,apiId:id || null,unknown:!v?.name};};
+ const asset=(kind,id)=>{const key=String(id ?? '').toLowerCase(), v=id && (catalog?.[kind]?.[key] || savedAssets[kind].get(key));return {name:v?.name || t('unknown'),image:v?.image || null,apiId:id || null,unknown:!v?.name};};
  const unit=(v,id)=>({...asset('champion',v.championId),id,star:[1,2,3].includes(v.star)?v.star:null,items:Array.from({length:3},(_,i)=>asset('item',v.items?.[i]))});
  const board=[],unresolved=[],used=new Set(),slots=new Set();
  list(a.board).forEach((v,i)=>{const u=unit(v,`board-${i}`),p=v.row*7+v.col;const valid=Number.isInteger(v.row)&&v.row>=0&&v.row<4&&Number.isInteger(v.col)&&v.col>=0&&v.col<7;if(valid&&!used.has(p)){board.push({...u,position:p});used.add(p);}else unresolved.push(u);});

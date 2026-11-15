@@ -67,11 +67,31 @@ class ChampionAssistTests(unittest.TestCase):
             path.with_suffix('.json').write_text('{}')
             self.assertEqual(ChampionAssist(catalog,path).status,'model_invalid')
         assist=self.assistant();unit=self.unit()
-        self.assertEqual(assist.apply(np.zeros((720,1280,3),np.uint8),[unit])['status'],'unsupported_frame')
+        self.assertEqual(assist.apply(np.zeros((900,1600-8,3),np.uint8),[unit])['status'],'unsupported_frame')
         assist.current_set=17
         self.assertEqual(assist.apply(np.zeros((1080,1920,3),np.uint8),[unit])['status'],'unsupported_frame')
         assist.session.run.assert_not_called()
         self.assertIsNone(unit['championId'])
+
+    def test_scaled_16_by_9_frame_uses_same_model_space(self):
+        assist = self.assistant()
+        unit = self.unit()
+        unit['bbox'] = [value * 2 / 3 for value in unit['bbox']]
+        box = unit['bbox'][:]
+        result = assist.apply(np.zeros((720, 1280, 3), np.uint8), [unit])
+        self.assertEqual(result['accepted'], 1)
+        self.assertEqual(unit['bbox'], box)
+
+    def test_tight_context_recovers_unidentified_unit(self):
+        assist = self.assistant()
+        assist.session.run.side_effect = [
+            [np.zeros((3, 3), np.float32)],
+            [np.array([[10, -10, -10]] * 3, np.float32)],
+        ]
+        unit = self.unit()
+        result = assist.apply(np.zeros((1080, 1920, 3), np.uint8), [unit])
+        self.assertEqual(result['accepted'], 1)
+        self.assertEqual(unit['identityMethod'], 'copilot-tight-context-consensus')
 
     def test_invalid_boxes_and_weak_detections_do_not_trigger_inference(self):
         assist=self.assistant();units=[]

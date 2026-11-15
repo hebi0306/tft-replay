@@ -12,8 +12,10 @@ BOARD_ROI = [0.20, 0.22, 0.62, 0.43]
 BENCH_ROI = [0.1875, 0.65, 0.5625, 0.12]
 # Measured cell centers from the visible placement grid at 1920x1080.
 # shortcut: standard camera calibration; other arenas/camera transforms require recalibration.
-HEX_ROWS = [(565/1920, 450/1080, 114/1920), (606/1920, 520/1080, 118/1920),
-            (536/1920, 595/1080, 123/1920), (576/1920, 675/1080, 130/1920)]
+HEX_ROWS = [(449, (560, 674, 789, 905, 1020, 1137, 1252)),
+            (521, (602, 720, 836, 953, 1071, 1190, 1309)),
+            (596, (528, 650, 774, 897, 1020, 1143, 1269)),
+            (676, (566, 695, 824, 953, 1083, 1212, 1342))]
 HEX_MAX_DISTANCE = 0.035
 MODEL_SIZE = 640
 UNIT_CONFIDENCE = 0.65

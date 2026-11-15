@@ -7,10 +7,9 @@ import threading
 import time
 from analysis import StageTracker, TftImageAnalyzer, crop, normalized_roi
 from repository import MatchRepository
-from capture_config import STAT_CONFIG, STAT_SAMPLES, GOLD_RETRY_SECONDS
-from stat_detector import majority_stats, stable_gold
+from capture_config import STAT_CONFIG
 from concurrent.futures import ThreadPoolExecutor
-from board_config import STABILIZE_SECONDS, MAX_WAIT_SECONDS
+from combat_phase import combat_phase
 from repository import now
 
 
@@ -56,6 +55,7 @@ class CaptureService:
         self.state = {'recording': False, 'matchId': None, 'stage': None, 'rounds': 0, 'warning': None}
         self.analyzer = None
         self.stage_analyzer = None
+        self.auto_candidate = None
         self.auto_tracker = StageTracker()
         self.auto_window = None
         self.auto_suppressed = False
@@ -100,7 +100,7 @@ class CaptureService:
                 'roiImage': 'data:image/png;base64,' + base64.b64encode(png_bytes(crop(frame, selected_roi))).decode('ascii'),
                 'stage': stage}
 
-    def start(self, options):
+    def start(self, options, opening=None):
         from window_detector import game_windows
         validate_options(options)
         if self.thread and self.thread.is_alive():
@@ -114,7 +114,7 @@ class CaptureService:
         self.auto_suppressed = False
         self.stop_event.clear()
         self.update(recording=True, matchId=match_id, stage=None, rounds=0, warning=None)
-        self.thread = threading.Thread(target=self.record, args=(options, match_id), daemon=True)
+        self.thread = threading.Thread(target=self.record, args=(options, match_id, opening), daemon=True)
         self.thread.start()
         return self.status()
 
@@ -131,10 +131,12 @@ class CaptureService:
             self.auto_window = None
             self.auto_tracker = StageTracker()
         if window is None:
+            self.auto_candidate = None
             self.auto_tracker.observe(None)
             return self.status()
         if self.auto_window != window['id']:
             self.auto_window = window['id']
+            self.auto_candidate = None
             self.auto_tracker = StageTracker()
             self.auto_missing = 0
             self.auto_suppressed = False
@@ -142,15 +144,20 @@ class CaptureService:
         validate_options(selected)
         self.prepare()
         try:
+            observed = time.monotonic()
             with mss.mss() as sct:
                 frame = capture_frame(sct, selected)
             stage = self.analyzer.detect_stage(frame, selected['stageRoi'])
         except Exception:
+            self.auto_candidate = None
             self.auto_tracker.observe(None)
             return self.status()
         self.auto_missing = 0 if stage else self.auto_missing + 1
         if self.auto_missing >= 36:
             self.auto_suppressed = False
+        previous = self.auto_candidate
+        phase, seconds = combat_phase(frame, getattr(self.analyzer, 'ocr', None)) if stage and not self.auto_suppressed else (None, None)
+        self.auto_candidate = (stage, (frame.copy(), now(), observed, phase, seconds)) if phase in ('planning', 'manual') else None
         confirmed = self.auto_tracker.observe(stage)
         if confirmed and self.auto_suppressed and confirmed.startswith('1-') and (self.status()['stage'] or '') >= '2-1':
             self.auto_suppressed = False
@@ -158,7 +165,9 @@ class CaptureService:
             if self.analyzer.detect_game_end(frame, self.stat_rois(selected)):
                 return self.status()
             selected['_automatic'] = True
-            result = self.start(selected)
+            candidate = previous[1] if previous and previous[0] == confirmed and phase == 'combat' else None
+            result = self.start(selected, (confirmed, frame, observed, (phase, seconds), candidate))
+            self.auto_candidate = None
             self.auto_tracker = StageTracker()
             return result
         return self.status()
@@ -184,14 +193,14 @@ class CaptureService:
         except Exception as error:
             print(f'[Board metadata failed] {error}', file=sys.stderr, flush=True)
 
-    def analyze_board(self, frame, match_id, stage, captured_at, debug):
+    def analyze_board(self, frame, match_id, stage, captured_at, debug, source='stabilized_frame'):
         try:
             from stage_analyzer import TftStageAnalyzer
             if self.stage_analyzer is None:
                 self.stage_analyzer = TftStageAnalyzer()
             directory = self.repo.root / match_id / 'debug' / stage if debug else None
             result = self.stage_analyzer.analyze(frame, stage, directory)
-            result.update(capturedAt=captured_at, source='stabilized_frame')
+            result.update(capturedAt=captured_at, source=source)
             # Keep the exact analyzed frame separate from the existing immediate screenshot.
             image = png_bytes(frame) if result['status']['board'] == 'ready' else None
             self.repo.update_analysis(match_id, stage, result, image)
@@ -202,47 +211,34 @@ class CaptureService:
             print(f'[Board analysis failed] {error}', file=sys.stderr, flush=True)
             self.skip_board(match_id, stage, 'analysis_failed')
 
-    def record(self, options, match_id):
+    def record(self, options, match_id, opening=None):
         import mss
         from window_detector import capture_frame
         tracker = StageTracker()
         failed = False
-        missing_since = None
         end_checks = 0
         next_end_check = 0
         restart_tracker = StageTracker()
-        pending = None
-        pending_board, board_future = None, None
+        candidate = opening[4] if opening else None
+        if opening:
+            tracker.commit(opening[0])
+            self.update(stage=opening[0])
+        saved_stage = None
         board_worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix='tft-board')
-        def finish_stats():
-            nonlocal pending
-            if not pending: return
-            values = majority_stats(pending['samples'])
-            values['gold'] = stable_gold(pending['goldSamples'])
-            try:
-                self.repo.update_stats(match_id, pending['stage'], values)
-                for kind, value in values.items():
-                    print(f"[{kind.upper()}] {value}" if value is not None else f"[{kind.upper()} OCR Failed]", file=sys.stderr, flush=True)
-                print(f"[Saved] {match_id} / {pending['stage']}", file=sys.stderr, flush=True)
-            except Exception as error:
-                print(f'[Stats save failed] {error}', file=sys.stderr, flush=True)
-                self.update(warning='stats_save_failed')
-            pending = None
-        def stats_ready():
-            return pending and pending['attempts'] >= STAT_SAMPLES and (
-                self.stat_rois(options)['gold'] is None
-                or stable_gold(pending['goldSamples']) is not None
-                or time.monotonic() >= pending['expires'])
         try:
             while not self.stop_event.is_set():
                 started = time.monotonic()
                 try:
-                    with mss.mss() as sct:
-                        frame = capture_frame(sct, options)
-                    stage = self.analyzer.detect_stage(frame, options['stageRoi'])
+                    opening_phase = None
+                    if opening:
+                        stage, frame, started, opening_phase, _ = opening
+                        opening = None
+                    else:
+                        with mss.mss() as sct:
+                            frame = capture_frame(sct, options)
+                        stage = self.analyzer.detect_stage(frame, options['stageRoi'])
                     if options.get('_automatic'):
                         current = time.monotonic()
-                        missing_since = (missing_since if missing_since is not None else current) if stage is None else None
                         if current >= next_end_check:
                             next_end_check = current + 3
                             try:
@@ -255,64 +251,47 @@ class CaptureService:
                                 print('[Recording ended] result screen or zero HP confirmed', file=sys.stderr, flush=True)
                                 break
                         restarted = restart_tracker.observe(stage if stage and stage.startswith('1-') and tracker.previous and tracker.previous >= '2-1' else None)
-                        if (missing_since is not None and current - missing_since >= 90) or restarted:
-                            self.auto_suppressed = not bool(restarted)
-                            print('[Recording ended] HUD absent or next game detected', file=sys.stderr, flush=True)
+                        if restarted:
+                            self.auto_suppressed = False
+                            print('[Recording ended] next game detected', file=sys.stderr, flush=True)
                             break
-                    if pending_board and ((stage is not None and stage != pending_board['stage']) or time.monotonic() > pending_board['expires']):
-                        self.skip_board(match_id, pending_board['stage'], 'stable_frame_unavailable')
-                        pending_board = None
-                    if pending and stage is not None and stage != pending['stage']:
-                        finish_stats()
                     confirmed = tracker.observe(stage)
                     self.update(warning=None if stage else 'ocr_retry')
                     if confirmed:
-                        try:
-                            self.repo.save_round(match_id, confirmed, png_bytes(frame))
-                        except Exception:
-                            self.update(warning='storage_failed')
-                            failed = True
-                            break
-                        print(f'[Stage Confirmed] {confirmed}', file=sys.stderr, flush=True)
-                        pending = {'stage': confirmed, 'samples': [], 'goldSamples': [], 'attempts': 0,
-                                   'expires': time.monotonic() + GOLD_RETRY_SECONDS}
-                        pending_board = {'stage': confirmed, 'due': time.monotonic() + STABILIZE_SECONDS,
-                                         'expires': time.monotonic() + MAX_WAIT_SECONDS}
                         tracker.commit(confirmed)
-                        self.update(stage=confirmed, rounds=self.status()['rounds'] + 1)
-                    if pending:
-                        pending['attempts'] += 1
-                        if stage == pending['stage']:
-                            if pending['attempts'] <= STAT_SAMPLES:
+                        self.update(stage=confirmed)
+                        print(f'[Stage Confirmed] {confirmed}', file=sys.stderr, flush=True)
+                    if stage is None or stage != tracker.previous:
+                        candidate = None
+                    elif stage != saved_stage:
+                        phase, seconds = opening_phase or combat_phase(frame, getattr(self.analyzer, 'ocr', None))
+                        if phase in ('planning', 'manual'):
+                            candidate = (frame.copy(), now(), started, phase, seconds)
+                        elif phase == 'combat' and candidate is not None:
+                            picture, timestamp, observed, previous_phase, remaining = candidate
+                            candidate = None
+                            if started - observed <= 2.5 and (previous_phase == 'manual' or remaining <= 4):
                                 try:
-                                    values, details = self.analyzer.analyze_stats(frame, self.stat_rois(options), options.get('debug', False))
+                                    self.repo.save_round(match_id, stage, png_bytes(picture), timestamp)
                                 except Exception:
-                                    values, details = {kind: None for kind in STAT_CONFIG}, {}
-                                pending['samples'].append(values)
-                                if options.get('debug', False):
-                                    try: self.save_debug(match_id, pending['stage'], pending['attempts'], frame, details, values)
-                                    except Exception as error: print(f'[Debug save failed] {error}', file=sys.stderr, flush=True)
-                                gold = values.get('gold')
-                            else:
-                                # Income animations and selection overlays can outlast the initial samples.
-                                try: gold = self.analyzer.detect_gold(frame, self.stat_rois(options)['gold'])
-                                except Exception: gold = None
-                            pending['goldSamples'].append(gold)
+                                    self.update(warning='storage_failed')
+                                    failed = True
+                                    break
+                                saved_stage = stage
+                                self.update(rounds=self.status()['rounds'] + 1)
+                                try:
+                                    values, details = self.analyzer.analyze_stats(picture, self.stat_rois(options), options.get('debug', False))
+                                    self.repo.update_stats(match_id, stage, values)
+                                    if options.get('debug', False):
+                                        self.save_debug(match_id, stage, 1, picture, details, values)
+                                except Exception as error:
+                                    print(f'[Precombat stats failed] {error}', file=sys.stderr, flush=True)
+                                board_worker.submit(self.analyze_board, picture, match_id, stage, timestamp, options.get('debug', False), 'precombat')
                         else:
-                            pending['goldSamples'].append(None)
-                        if stats_ready(): finish_stats()
-                    if pending_board and stage == pending_board['stage'] and time.monotonic() >= pending_board['due']:
-                        if board_future is None or board_future.done():
-                            board_future = board_worker.submit(self.analyze_board, frame.copy(), match_id, stage, now(), options.get('debug', False))
-                        else:
-                            self.skip_board(match_id, stage, 'analysis_busy')
-                        pending_board = None
+                            candidate = None
                 except Exception as error:
                     tracker.observe(None)
-                    if pending:
-                        pending['attempts'] += 1
-                        pending['goldSamples'].append(None)
-                        if stats_ready(): finish_stats()
+                    candidate = None
                     code = str(error)
                     if options.get('_automatic'):
                         end_checks = 0
@@ -320,19 +299,12 @@ class CaptureService:
                         if code == 'window_missing':
                             print('[Recording ended] game window closed', file=sys.stderr, flush=True)
                             break
-                        if missing_since is not None and time.monotonic() - missing_since >= 90:
-                            self.auto_suppressed = True
-                            print('[Recording ended] HUD absent before capture became unavailable', file=sys.stderr, flush=True)
-                            break
                     self.update(warning=code if code in ('window_missing', 'window_minimized', 'window_background', 'invalid_region', 'monitor_missing') else 'ocr_retry')
-                self.stop_event.wait(max(0.05, 1.0 - (time.monotonic() - started)))
+                self.stop_event.wait(max(0.05, 0.5 - (time.monotonic() - started)))
         except Exception:
             failed = True
             self.update(warning='capture_failed')
         finally:
-            finish_stats()
-            if pending_board:
-                self.skip_board(match_id, pending_board['stage'], 'stable_frame_unavailable')
             board_worker.shutdown(wait=True)
             try:
                 self.repo.finish(match_id, 'interrupted' if failed else 'completed')

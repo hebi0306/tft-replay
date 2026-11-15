@@ -318,7 +318,7 @@ class BoardAnalysisTests(unittest.TestCase):
             self.assertFalse((root / 'recordings' / match / '3-2.analysis.png').exists())
             self.assertTrue(repo.image(row['id']).startswith('data:image/png;base64,'))
 
-    def test_record_loop_analyses_once_after_delay_and_contains_analysis_failure(self):
+    def test_record_loop_analyses_once_before_combat_and_contains_analysis_failure(self):
         with tempfile.TemporaryDirectory() as root:
             service = CaptureService(root)
             frame = np.zeros((100, 200, 3), dtype=np.uint8)
@@ -336,7 +336,7 @@ class BoardAnalysisTests(unittest.TestCase):
                     self.calls += 1
                     raise RuntimeError('bad model')
             service.analyzer, service.stage_analyzer = Numbers(), FailingBoard()
-            with patch('window_detector.capture_frame', return_value=frame), patch('capture_service.STABILIZE_SECONDS', 0), patch.object(service.stop_event, 'wait', side_effect=lambda _: __import__('time').sleep(.005)):
+            with patch('window_detector.capture_frame', return_value=frame), patch('capture_service.combat_phase', side_effect=[('planning', 1), ('combat', None)] * 2), patch.object(service.stop_event, 'wait', side_effect=lambda _: __import__('time').sleep(.005)):
                 started = service.start({'mode': 'region', 'monitor': 1, 'region': [0,0,1,1], 'stageRoi': [.4,0,.1,.05]})
                 service.thread.join(5)
             self.assertFalse(service.thread.is_alive())

@@ -1,3 +1,5 @@
+import { appStorage } from './appStorage.js';
+
 const STORAGE_KEY = 'tft-replay-compositions-v1';
 export const normalizeSearch = value => String(value ?? '').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, '');
 
@@ -12,7 +14,7 @@ export function validateComposition(value) {
   }
   return { name: value.name.trim(), champions: value.champions.map(unit => ({ championId: unit.championId, stars: unit.stars ?? 1, position: { row: unit.position.row, column: unit.position.column }, items: [...unit.items] })) };
 }
-export function getCompositions(storage = localStorage) {
+export function getCompositions(storage = appStorage) {
   try {
     const rows = JSON.parse(storage.getItem(STORAGE_KEY) || '[]');
     if (!Array.isArray(rows)) throw new Error();
@@ -30,18 +32,18 @@ function write(rows, storage) {
   try { storage.setItem(STORAGE_KEY, JSON.stringify(rows)); }
   catch { throw new Error('compositionWriteError'); }
 }
-export function saveComposition(value, storage = localStorage) {
+export function saveComposition(value, storage = appStorage) {
   const data = validateComposition(value), rows = getCompositions(storage), now = new Date().toISOString();
   const row = { ...data, id: crypto.randomUUID(), createdAt: now, updatedAt: now };
   write([row, ...rows], storage); return row;
 }
-export function updateComposition(id, value, storage = localStorage) {
+export function updateComposition(id, value, storage = appStorage) {
   const data = validateComposition(value), rows = getCompositions(storage), index = rows.findIndex(row => row.id === id);
   if (index < 0) throw new Error('compositionMissing');
   rows[index] = { ...rows[index], ...data, updatedAt: new Date().toISOString() };
   write(rows, storage); return rows[index];
 }
-export function deleteComposition(id, storage = localStorage) { write(getCompositions(storage).filter(row => row.id !== id), storage); }
+export function deleteComposition(id, storage = appStorage) { write(getCompositions(storage).filter(row => row.id !== id), storage); }
 export function searchCompositions(rows, query, filter, catalog) {
   const q = normalizeSearch(query);
   const matches = text => normalizeSearch(text).includes(q);

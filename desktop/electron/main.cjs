@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { join, resolve } = require('node:path');
+const { readFileSync, writeFileSync, renameSync } = require('node:fs');
 const { pathToFileURL } = require('node:url');
 
 const { getRiotAccount } = require('./riotClientAccount.cjs');
@@ -23,6 +24,28 @@ async function createWindow() {
   function assertLocalSender(event) {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || new URL(event.senderFrame.url).origin !== origin) throw new Error('Forbidden');
   }
+  const storageKeys = new Set(['tft-replay-language', 'tft-capture-options', 'tft-replay-compositions-v1']);
+  ipcMain.on('app-storage', (event, key, value) => {
+    try {
+      assertLocalSender(event);
+      if (!storageKeys.has(key)) throw new Error('Invalid storage key');
+      const file = join(app.getPath('userData'), key + '.json');
+      if (value === undefined) {
+        try { event.returnValue = { value: readFileSync(file, 'utf8') }; }
+        catch (error) {
+          if (error.code !== 'ENOENT') throw error;
+          event.returnValue = { value: null };
+        }
+        return;
+      }
+      if (typeof value !== 'string' || Buffer.byteLength(value) > 5 * 1024 * 1024) throw new Error('Invalid storage value');
+      writeFileSync(file + '.tmp', value, 'utf8');
+      renameSync(file + '.tmp', file);
+      event.returnValue = {};
+    } catch {
+      event.returnValue = { error: true };
+    }
+  });
   ipcMain.handle('riot-client:account', event => {
     assertLocalSender(event);
     return getRiotAccount(app.getPath('userData'));

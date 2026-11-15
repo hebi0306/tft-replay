@@ -85,7 +85,7 @@ class CaptureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             service = CaptureService(root)
             frame = np.zeros((100, 200, 3), dtype=np.uint8)
-            frames = iter([frame, ValueError('window_minimized'), frame, frame, frame, frame, frame, frame])
+            frames = iter([frame, ValueError('window_minimized'), *([frame] * 9)])
             def grab(*_):
                 try:
                     value = next(frames)
@@ -95,10 +95,13 @@ class CaptureTests(unittest.TestCase):
                 if isinstance(value, Exception): raise value
                 return value
             class Analyzer:
-                def __init__(self): self.stages = iter(['2-1', '2-1', '2-1', '2-1', '2-2', '2-2', '2-2'])
+                def __init__(self): self.stages = iter(['2-1'] * 5 + ['2-2'] * 5)
                 def detect_stage(self, *_): return next(self.stages)
             service.analyzer = Analyzer()
-            with patch('window_detector.capture_frame', side_effect=grab), patch.object(service.stop_event, 'wait', return_value=False):
+            def save_fallback(image, match_id, stage, captured_at, debug, source):
+                self.assertTrue(np.array_equal(image, frame))
+                service.repo.update_analysis(match_id, stage, {'stage': stage, 'source': source, 'board': [], 'bench': [], 'traits': []})
+            with patch('window_detector.capture_frame', side_effect=grab), patch.object(service.stop_event, 'wait', return_value=False), patch.object(service, 'analyze_board', side_effect=save_fallback), patch('capture_service.combat_phase', side_effect=[('planning', 1), ('combat', None), ('planning', 1), ('combat', None)]):
                 result = service.start({'mode': 'region', 'monitor': 1, 'region': [0, 0, 1, 1], 'stageRoi': [0.4, 0, 0.1, 0.05]})
                 service.thread.join(timeout=5)
                 self.assertFalse(service.thread.is_alive())
@@ -106,6 +109,7 @@ class CaptureTests(unittest.TestCase):
             match = service.repo.match(result['matchId'])
             self.assertEqual(match['status'], 'completed')
             self.assertEqual([r['stage'] for r in match['rounds']], ['2-1', '2-2'])
+            self.assertEqual([r['analysis']['source'] for r in match['rounds']], ['precombat', 'precombat'])
 
 
 if __name__ == '__main__':

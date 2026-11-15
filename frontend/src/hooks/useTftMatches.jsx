@@ -38,7 +38,7 @@ export function TftMatchesProvider({children}) {
    async function monitor() {
      try { await localReplay('auto_tick', savedOptions()); }
      catch { /* Manual controls show setup and capture errors. */ }
-     finally { if (active) timer = setTimeout(monitor, 2500); }
+     finally { if (active) timer = setTimeout(monitor, 1000); }
    }
    monitor();
    return () => { active = false; clearTimeout(timer); };

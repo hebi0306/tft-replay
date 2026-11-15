@@ -54,7 +54,7 @@ class MatchRepository:
         with self.connect() as db:
             db.execute('UPDATE matches SET ended_at=?, status=? WHERE id=?', (now(), status, match_id))
 
-    def save_round(self, match_id, stage, png):
+    def save_round(self, match_id, stage, png, captured_at=None):
         from analysis import parse_stage
         if parse_stage(stage) != stage:
             raise ValueError('invalid_stage')
@@ -69,7 +69,7 @@ class MatchRepository:
             temporary = target.with_suffix('.tmp')
             temporary.write_bytes(png)
             temporary.replace(target)
-            db.execute('INSERT INTO rounds(match_id,stage,image_path,captured_at) VALUES (?,?,?,?)', (match_id, stage, relative, now()))
+            db.execute('INSERT INTO rounds(match_id,stage,image_path,captured_at) VALUES (?,?,?,?)', (match_id, stage, relative, captured_at or now()))
 
     def update_stats(self, match_id, stage, values):
         from capture_config import STAT_CONFIG
