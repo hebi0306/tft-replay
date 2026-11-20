@@ -4,3 +4,10 @@
 .local-replay-note{font-size:12px;color:var(--muted);line-height:1.7;padding:12px 18px}.local-detected-units .final-composition{flex-wrap:wrap;padding:16px}.local-analysis-details{padding:18px}.local-analysis-details summary{cursor:pointer}.local-analysis-details pre{max-height:320px;overflow:auto;font-size:11px}.local-replay-page .replay-center{min-width:0;display:flex;flex-direction:column;gap:18px}.result-dot.unknown,.timeline-node.unknown{background:#778980}.local-replay-page .bench .unit.compact .unit-name{display:block}
 
 .local-reconstruction .replay-center{min-width:0;display:flex;flex-direction:column;gap:18px}
+
+.round-review-body{padding:0 22px 22px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.round-review-body h4{margin:16px 0 4px}
+.round-review-body ul{padding-left:20px}
+.round-review-body summary{cursor:pointer;margin:12px 0;color:var(--mint)}
+
+.review-compare-button{width:100%;margin-top:14px;white-space:normal}.alternative-board{scroll-margin-top:20px}.round-review-body .review-more summary{font-size:11px}.round-review-body .muted{line-height:1.6}

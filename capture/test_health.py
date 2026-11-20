@@ -13,7 +13,7 @@ from health_detector import health_roi
 
 def frame_at(y, value=100):
     frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
-    badge = cv2.imread(str(Path(__file__).parent / 'fixtures' / f'health-{value}.png'))
+    badge = cv2.imdecode(np.fromfile(Path(__file__).parent / 'fixtures' / f'health-{value}.png', dtype=np.uint8), cv2.IMREAD_COLOR)
     frame[y:y + badge.shape[0], 1756:1756 + badge.shape[1]] = badge
     return frame
 
@@ -35,7 +35,7 @@ class HealthTests(unittest.TestCase):
     def test_round_header_positions_from_actual_game(self):
         for name, expected in [('extended', '1-4'), ('standard', '1-4'), ('later', '2-4')]:
             frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
-            frame[:40, 680:900] = cv2.imread(str(Path(__file__).parent / 'fixtures' / ('stage-' + name + '.png')))
+            frame[:40, 680:900] = cv2.imdecode(np.fromfile(Path(__file__).parent / 'fixtures' / f'stage-{name}.png', dtype=np.uint8), cv2.IMREAD_COLOR)
             self.assertEqual(self.analyzer.detect_stage(frame, [0.428, 0.002, 0.025, 0.028]), expected)
 
     def test_missing_or_ambiguous_badges_are_unknown(self):

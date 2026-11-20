@@ -11,3 +11,10 @@ export function savedOptions() {
   } catch { /* Calibration is optional; corrupt settings use defaults. */ }
   return defaults;
 }
+
+export function selectCaptureWindow(currentId, windows) {
+  if (windows.some(window => window.id === currentId)) return currentId;
+  const visible = windows.filter(window => !window.minimized);
+  if (visible.length === 1) return visible[0].id;
+  return windows.length === 1 ? windows[0].id : '';
+}

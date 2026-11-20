@@ -1,5 +1,5 @@
 import { appStorage } from '../services/appStorage.js';
-import { savedOptions, stagePresets } from '../services/captureOptions.js';
+import { savedOptions, stagePresets, selectCaptureWindow } from '../services/captureOptions.js';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageProvider.jsx';
@@ -20,8 +20,14 @@ export default function LocalRecordings() {
     let active = true, timer;
     async function poll() {
       try {
-        const next = await localReplay('status'), matches = await localReplay('list');
-        if (active) { setStatus(next); setRows(matches); }
+        const [next, matches, detected] = await Promise.all([localReplay('status'), localReplay('list'), localReplay('sources')]);
+        if (active) {
+          setStatus(next); setRows(matches); setSources(detected);
+          setOptions(previous => {
+            const windowId = selectCaptureWindow(previous.windowId, detected.windows);
+            return windowId === previous.windowId ? previous : { ...previous, windowId };
+          });
+        }
       } catch (error) { if (active) setError(error.message); }
       if (active) timer = setTimeout(poll, 2500);
     }
@@ -31,7 +37,7 @@ export default function LocalRecordings() {
   }, [supported]);
   async function refreshSources() {
     const next = await localReplay('sources'); setSources(next);
-    setOptions(previous => ({ ...previous, windowId: next.windows.some(w => w.id === previous.windowId) ? previous.windowId : next.windows.length === 1 ? next.windows[0].id : '' }));
+    setOptions(previous => ({ ...previous, windowId: selectCaptureWindow(previous.windowId, next.windows) }));
   }
   async function action(method) {
     setBusy(true); setError('');

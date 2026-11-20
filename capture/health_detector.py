@@ -6,7 +6,12 @@ from pathlib import Path
 @lru_cache(maxsize=2)
 def badge_template(name='health-badge.png'):
     import cv2
-    image = cv2.imread(str(Path(__file__).parent / 'assets' / name), 0)
+    import numpy as np
+    try:
+        data = (Path(__file__).parent / 'assets' / name).read_bytes()
+        image = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_GRAYSCALE) if data else None
+    except OSError as error:
+        raise ValueError('health_template_missing') from error
     if image is None:
         raise ValueError('health_template_missing')
     return image
