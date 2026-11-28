@@ -356,5 +356,29 @@ def main():
         service.stop()
 
 
+def self_test():
+    from tempfile import TemporaryDirectory
+
+    import numpy as np
+    from stage_analyzer import TftStageAnalyzer
+
+    with TemporaryDirectory() as root:
+        service = CaptureService(root)
+        service.prepare()
+        if service.dispatch('list', {}) != []:
+            raise RuntimeError('Unexpected recordings in a clean repository')
+
+    analyzer = TftStageAnalyzer()
+    if analyzer.detector.status != 'ready' or analyzer.champion_assist.status != 'ready':
+        raise RuntimeError(f'Capture models unavailable: {analyzer.detector.status}, {analyzer.champion_assist.status}')
+    if not analyzer.details.champions.samples or not analyzer.hud.items.samples:
+        raise RuntimeError('Capture reference images unavailable')
+    analyzer.detector.detect(np.zeros((360, 640, 3), dtype=np.uint8))
+    print('Capture worker, OCR, ONNX models, references and SQLite verified.')
+
+
 if __name__ == '__main__':
-    main()
+    if sys.argv[1:] == ['--self-test']:
+        self_test()
+    else:
+        main()

@@ -3,7 +3,6 @@ const { join, resolve } = require('node:path');
 const { readFileSync, writeFileSync, renameSync } = require('node:fs');
 const { pathToFileURL } = require('node:url');
 
-const { getRiotAccount } = require('./riotClientAccount.cjs');
 const { createCaptureBridge } = require('./captureBridge.cjs');
 let server, capture, quitting = false;
 app.setName('TFT Replay');
@@ -45,10 +44,6 @@ async function createWindow() {
     } catch {
       event.returnValue = { error: true };
     }
-  });
-  ipcMain.handle('riot-client:account', event => {
-    assertLocalSender(event);
-    return getRiotAccount(app.getPath('userData'));
   });
   ipcMain.handle('local-replay', async (event, method, args) => {
     assertLocalSender(event);

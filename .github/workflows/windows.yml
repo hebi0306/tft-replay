@@ -1,0 +1,73 @@
+name: Windows CI and release
+
+on:
+  pull_request:
+  push:
+    branches: ['**']
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+          cache: pip
+          cache-dependency-path: capture/requirements.txt
+      - run: npm ci
+      - run: npm run capture:setup
+      - run: npm run release:verify
+      - run: npm test
+      - run: npm run capture:test
+      - run: npm run build
+        if: github.ref_type != 'tag'
+      - name: Set the release version
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_NAME -notmatch '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') {
+            throw 'Expected a release tag such as v1.0.0.'
+          }
+          npm version $env:GITHUB_REF_NAME.Substring(1) --no-git-tag-version --allow-same-version
+      - if: github.ref_type == 'tag'
+        run: npm run package
+      - name: Test the packaged Python worker
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        run: |
+          & 'release/win-unpacked/resources/capture-service/capture-service.exe' --self-test
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged capture worker self-test failed.' }
+      - uses: actions/upload-artifact@v4
+        if: github.ref_type == 'tag'
+        with:
+          name: tft-replay-windows
+          path: release/*-Setup-*.exe
+          if-no-files-found: error
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: tft-replay-windows
+          path: installer
+      - name: Publish the Windows installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" installer/*-Setup-*.exe \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes

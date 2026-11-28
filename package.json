@@ -11,13 +11,14 @@
     "build": "vite build --config frontend/vite.config.js --configLoader runner",
     "preview": "vite preview --config frontend/vite.config.js --host 127.0.0.1 --configLoader runner",
     "start": "npm run build && ow-electron .",
-    "package": "npm run capture:bundle && npm run build && ow-electron-builder --publish=never",
+    "package": "npm run capture:bundle && npm run build -- --emptyOutDir && ow-electron-builder --publish=never",
     "build:ow-electron": "npm run package",
     "backend": "node backend/index.js",
     "test": "node --test tests/*.test.js",
     "capture:setup": "\"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -ExecutionPolicy Bypass -File capture/setup.ps1",
     "capture:test": ".capture-venv\\Scripts\\python.exe -m unittest discover -s capture -p test_*.py",
-    "capture:bundle": "\"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -ExecutionPolicy Bypass -File capture/bundle.ps1"
+    "capture:bundle": "\"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -ExecutionPolicy Bypass -File capture/bundle.ps1",
+    "release:verify": "node scripts/verify-capture-assets.mjs"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -36,9 +37,9 @@
     "files": [
       "dist/**/*",
       "desktop/**/*",
-      "backend/riotProxy.js",
       "frontend/assets/**/*",
-      "package.json"
+      "package.json",
+      "!desktop/electron/riotClientAccount.cjs"
     ],
     "overwolf": {
       "requireSigning": false,

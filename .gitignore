@@ -20,14 +20,13 @@ __pycache__/
 *.spec
 
 # Local training data and downloaded static references
+# Release models and reference assets below are required on a clean checkout.
 capture/models/*.onnx
+!capture/models/unit.onnx
+!capture/models/champion-identity.onnx
 capture/models/*.pt
 capture/training-runs/
-capture/data/catalog.json
-capture/data/references.json
-capture/data/items/
 capture/data/portraits/
-capture/data/crops/
 capture/dataset/images/**/*.png
 capture/dataset/images/**/*.jpg
 capture/dataset/labels/**/*.txt
